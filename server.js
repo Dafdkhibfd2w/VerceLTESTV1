@@ -117,6 +117,17 @@ app.use((req, res, next) => {
   }
 })();
 
+
+mongoose.set('bufferCommands', false); // לא לבאפר פעולות אם אין חיבור
+app.use(async (req, res, next) => {
+  try {
+    await connectMongoose();
+    next();
+  } catch (err) {
+    console.error('DB connect failed:', err);
+    return res.status(503).json({ ok: false, message: 'Database unavailable' });
+  }
+});
 // ===== Utils =====
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
