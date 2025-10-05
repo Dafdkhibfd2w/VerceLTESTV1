@@ -89,7 +89,10 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: ["http://localhost:3000","https://closemanages.vercel.app"],
+  origin: [
+    "https://verce-ltestv-1.vercel.app",
+    "http://localhost:4000"
+  ],
   credentials: true
 }));
 
@@ -887,7 +890,7 @@ const newTenant = await Tenant.create({
     const token = jwt.sign(payload, SECRET, { expiresIn: "7d" });
     
     res.cookie("token", token, {
-      sameSite: "lax",
+      sameSite: "none",
       secure: true,
       httpOnly: true,
       maxAge: 1000 * 60 * 60 * 24 * 7
