@@ -253,6 +253,11 @@ function requirePlatformAdmin(req, res, next) {
   if (!isAdmin) return res.status(403).json({ ok:false, message:"Forbidden" });
   next();
 }
+app.use('/css', express.static(path.join(__dirname, 'public/css')));
+app.use('/js', express.static(path.join(__dirname, 'public/js')));
+app.use('/icons', express.static(path.join(__dirname, 'public/icons')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
+app.use(express.static(path.join(__dirname, 'public'))); // fallback לכל קובץ אחר בתוך public
 
 // ===== Views (Auth pages only) =====
 app.get("/login", (req, res) => {
