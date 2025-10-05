@@ -1167,7 +1167,7 @@ function plainFeatures(f) {
 }
 
 // ⚠️ אותו handler לשני מסלולים – עם/בלי /api
-app.get(['/tenant/info', '/api/tenant/info'], authenticateUser, async (req, res) => {
+app.get('/api/tenant/info', authenticateUser, async (req, res) => {
   try {
     const user   = req.user;
     const tenant = await Tenant.findById(user.TenantID).lean();
@@ -1220,7 +1220,7 @@ app.get(['/tenant/info', '/api/tenant/info'], authenticateUser, async (req, res)
 });
 
 // רשימת חשבוניות (גם כאן – עם/בלי /api)
-app.get(['/invoices/list', '/api/invoices/list'], authenticateUser, async (req, res) => {
+app.get('/api/invoices/list', authenticateUser, async (req, res) => {
   try {
     const tenantId = req.user.TenantID;
     const items = await Invoice.find({ tenant: tenantId })
