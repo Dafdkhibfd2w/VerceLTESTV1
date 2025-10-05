@@ -813,6 +813,7 @@ app.get('/api/logs', authenticateUser, async (req, res) => {
   }
 });
 
+const slugify = require('slugify');
 
 
 // 🔹 אימות קוד - יצירת משתמש עם Tenant
@@ -849,12 +850,13 @@ app.post("/auth/verify-email-code", async (req, res) => {
         TenantName: rec.tenantName,
         memberships: []  // ריק בינתיים
       });
-
+const slug = slugify(rec.tenantName, { lower: true, strict: true });
       // 🔹 שלב 2: יוצרים Tenant עם ה-owner שיצרנו
-      const newTenant = await Tenant.create({
-        name: rec.tenantName,
-        owner: user._id  // ✅ עכשיו יש לנו ID של User אמיתי
-      });
+const newTenant = await Tenant.create({
+  name: rec.tenantName,
+  slug,                   // 👈 חובה למלא
+  owner: user._id
+});
 
       // 🔹 שלב 3: מעדכנים את ה-User עם ה-Tenant
       user.TenantID = newTenant._id;
@@ -1145,73 +1147,88 @@ app.put("/api/user/update", authenticateUser, async (req, res) => {
 
 // Middleware לבדיקת authentication
 
+function plainFeatures(f) {
+  if (!f) return {};
+  if (f instanceof Map) return Object.fromEntries(f);
+  if (typeof f === 'object') return f;
+  return {};
+}
 
-// Route לקבלת פרטי המשתמש והעסק
+
 app.get("/api/tenant/info", authenticateUser, async (req, res) => {
   try {
     const user = req.user;
-    
-    // מוצאים את הטנאנט
-    const tenant = await Tenant.findById(user.TenantID).lean();
-      const featureState = Object.fromEntries(
-    Object.keys(FEATURE_CATALOG).map(k => [k, !!(tenant.features && tenant.features.get && tenant.features.get(k))])
-  );
+
+    // תומך גם ב-TenantID מאוכלס (populate) וגם ב-ObjectId רגיל
+    const tenantId = user?.TenantID?._id || user?.TenantID;
+    const tenant = await Tenant.findById(tenantId).lean();
+
+    // ❗ חובה לבדוק לפני גישה לשדות
     if (!tenant) {
-      return res.status(404).json({ 
-        ok: false, 
-        message: "עסק לא נמצא" 
-      });
+      return res.status(404).json({ ok: false, message: "עסק לא נמצא" });
     }
 
-    // מוצאים את כל חברי הצוות של העסק
-    const teamMembers = await User.find({ 
-      TenantID: tenant._id 
-    }).select('name email role memberships').lean();
+    // נירמול פיצ'רים לאובייקט פשוט
+    const featuresObj = plainFeatures(tenant.features);
 
-    // מוצאים מי הבעלים
-    const owner = teamMembers.find(m => 
-      m.memberships?.some(mem => 
-        mem.tenant.toString() === tenant._id.toString() && 
-        mem.role === 'owner'
+    // בניית featureState לפי הקטלוג
+    // FEATURE_CATALOG יכול להיות אובייקט (מפתח→מידע) או מערך של מפתחות.
+    const catalogKeys = Array.isArray(globalThis.FEATURE_CATALOG)
+      ? globalThis.FEATURE_CATALOG
+      : (globalThis.FEATURE_CATALOG && typeof globalThis.FEATURE_CATALOG === "object")
+        ? Object.keys(globalThis.FEATURE_CATALOG)
+        : Object.keys(featuresObj); // fallback סביר אם אין קטלוג
+
+    const featureState = Object.fromEntries(
+      catalogKeys.map(k => [k, !!featuresObj[k]])
+    );
+
+    // חברי צוות + בעלים
+    const teamMembers = await User.find({ TenantID: tenant._id })
+      .select("name email role memberships")
+      .lean();
+
+    const owner = teamMembers.find(m =>
+      m.memberships?.some(mem =>
+        String(mem?.tenant) === String(tenant._id) && mem.role === "owner"
       )
     );
 
-    res.json({
+    const currentRole =
+      user.memberships?.find(mem => String(mem?.tenant) === String(tenant._id))
+        ?.role || "staff";
+
+    return res.json({
       ok: true,
       tenant: {
         id: tenant._id,
         name: tenant.name,
         createdAt: tenant.createdAt,
-        settings: tenant.settings,
-features: tenant.features || {}
+        settings: tenant.settings || {},
+        features: featuresObj
       },
+      featureState, // 👈 כאן זה מגיע ללקוח
       currentUser: {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.memberships?.find(m => 
-          m.tenant.toString() === tenant._id.toString()
-        )?.role || 'staff'
+        role: currentRole
       },
-      owner: owner ? {
-        name: owner.name,
-        email: owner.email
-      } : null,
+      owner: owner ? { name: owner.name, email: owner.email } : null,
       teamMembers: teamMembers.map(m => ({
         id: m._id,
         name: m.name,
         email: m.email,
-        role: m.memberships?.find(mem => 
-          mem.tenant.toString() === tenant._id.toString()
-        )?.role || 'staff'
+        role:
+          m.memberships?.find(mem => String(mem?.tenant) === String(tenant._id))
+            ?.role || "staff"
       }))
     });
   } catch (err) {
     console.error("tenant/info error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "שגיאה בטעינת נתוני העסק" 
-    });
+    return res
+      .status(500)
+      .json({ ok: false, message: "שגיאה בטעינת נתוני העסק" });
   }
 });
 

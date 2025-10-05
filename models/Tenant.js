@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const TenantSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-
+  slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
   settings: {
     currency: { type: String, default: 'ILS' },
     language: { type: String, default: 'he' },

@@ -638,58 +638,92 @@ wrap.onclick = (e) => {
   }
 
   // ---------- INIT ----------
-  document.addEventListener("DOMContentLoaded", async () => {
-    initTheme();
-    await withLoader(async () => {
-      const me = await fetch("/me", { credentials: "include" }).then(r => r.json());
-      if (!me?.ok || !me.user) { location.href = "/login"; return; }
-      setUserUI(me.user);
-      const uNameEl  = document.getElementById("settingsUserName");
-      const uMailEl  = document.getElementById("settingsEmail");
-      if (uNameEl && !uNameEl.value) uNameEl.value = me.user.name || "";
-      if (uMailEl && !uMailEl.value) uMailEl.value = me.user.email || "";
-      const r = await fetch("/api/tenant/info", { credentials: "include" });
-      if (!r.ok) { location.href = "/login"; return; }
-      const data = await r.json();
-      if (!data?.ok || !data?.tenant) { location.href = "/login"; return; }
-      tenantData = normalizeTenant(data);
-      renderTenant();
-      await loadLogs();
-// אופציונלי: רענון עדין כל דקה
-setInterval(loadLogs, 60_000);
-      applyFeatureGates();
-      renderBottomNav();
-      applyBottomNavGates();
-      bindNavEvents();
-      handleHashRoute();
+document.addEventListener("DOMContentLoaded", async () => {
+  initTheme();
 
-      const primaryActionBtn = document.getElementById("primaryActionBtn");
-      if (primaryActionBtn) {
-        primaryActionBtn.addEventListener("click", () => {
-          const s = primaryActionBtn.dataset.section || currentSection;
-          handlePrimaryAction(s);
-        });
-      }
-      document.querySelector(".theme-toggle")?.addEventListener("click", toggleTheme);
-      const themeOpts = document.querySelectorAll(".theme-options .theme-option");
-      if (themeOpts[0]) themeOpts[0].addEventListener("click", () => setTheme("light"));
-      if (themeOpts[1]) themeOpts[1].addEventListener("click", () => setTheme("dark"));
-      document.querySelector(".btn-logout")?.addEventListener("click", logout);
+  await withLoader(async () => {
+    // --- 1) /me ---
+    const meRes = await fetch("/me", { credentials: "include" });
+    if (meRes.status === 401 || meRes.status === 403) { location.href = "/login"; return; }
 
-      document.getElementById("editTenantBtn")?.addEventListener("click", openEditModal);
-      document.querySelector("#editModal .modal-close")?.addEventListener("click", closeEditModal);
-      document.querySelector("closeee")?.addEventListener("click", closeEditModal);
-      document.querySelector("#editModal .modal-footer .btn.btn-primary")?.addEventListener("click", saveTenantChanges);
+    const me = await meRes.json().catch(() => ({}));
+    const meUser = me?.user || null;
+    setUserUI(meUser || { username: "אורח", role: "user" });
 
-      document.querySelector("#section-settings .card:nth-of-type(1) .btn.btn-primary")?.addEventListener("click", saveBusinessSettings);
-      document.querySelector("#section-settings .card:nth-of-type(2) .btn.btn-primary")?.addEventListener("click", savePersonalSettings);
-    }, {
-      text: "טוען לוח בקרה...",
-      subtext: "מביא נתונים מהשרת",
-      scopeSelector: ".main-content",
-      minShow: 300
-    });
+    // מילוי שדות רק אם יש user
+    if (meUser) {
+      const uNameEl = document.getElementById("settingsUserName");
+      const uMailEl = document.getElementById("settingsEmail");
+      if (uNameEl && !uNameEl.value) uNameEl.value = meUser.name || "";
+      if (uMailEl && !uMailEl.value) uMailEl.value = meUser.email || "";
+    }
+
+    // --- 2) /api/tenant/info ---
+    const infoRes = await fetch("/api/tenant/info", { credentials: "include" });
+    if (infoRes.status === 401 || infoRes.status === 403) { location.href = "/login"; return; }
+
+    let data = {};
+    try { data = await infoRes.json(); } catch { data = {}; }
+
+    if (infoRes.ok && data?.ok && data?.tenant) {
+      // יש נתונים תקינים
+      tenantData = normalizeTenant(data); // משתמש גם ב-featureState אם מחזירים אותו
+    } else {
+      // לא OK/404/500 – לא מפנים ל-login. מציגים fallback/טוסט וממשיכים לעבוד.
+      window.showToast?.(data?.message || "שגיאה בטעינת נתוני העסק", "warning");
+      tenantData = {
+        name: "העסק שלי",
+        createdAt: new Date().toISOString(),
+        settings: {},
+        features: {},
+        teamMembers: []
+      };
+    }
+
+    // --- 3) המשך אתחול המסכים ---
+    renderTenant();
+    await loadLogs().catch(() => {});
+    setInterval(() => loadLogs().catch(() => {}), 60_000);
+
+    applyFeatureGates();
+    renderBottomNav();
+    applyBottomNavGates();
+    bindNavEvents();
+    handleHashRoute();
+
+    const primaryActionBtn = document.getElementById("primaryActionBtn");
+    if (primaryActionBtn) {
+      primaryActionBtn.addEventListener("click", () => {
+        const s = primaryActionBtn.dataset.section || currentSection;
+        handlePrimaryAction(s);
+      });
+    }
+
+    document.querySelector(".theme-toggle")?.addEventListener("click", toggleTheme);
+    const themeOpts = document.querySelectorAll(".theme-options .theme-option");
+    if (themeOpts[0]) themeOpts[0].addEventListener("click", () => setTheme("light"));
+    if (themeOpts[1]) themeOpts[1].addEventListener("click", () => setTheme("dark"));
+    document.querySelector(".btn-logout")?.addEventListener("click", logout);
+
+    // מודאל עריכת עסק
+    document.getElementById("editTenantBtn")?.addEventListener("click", openEditModal);
+    document.querySelector("#editModal .modal-close")?.addEventListener("click", closeEditModal);
+    document.querySelector("#editModal .modal-footer .btn.btn-primary")
+      ?.addEventListener("click", saveTenantChanges);
+
+    // שמירת הגדרות
+    document.querySelector("#section-settings .card:nth-of-type(1) .btn.btn-primary")
+      ?.addEventListener("click", saveBusinessSettings);
+    document.querySelector("#section-settings .card:nth-of-type(2) .btn.btn-primary")
+      ?.addEventListener("click", savePersonalSettings);
+  }, {
+    text: "טוען לוח בקרה...",
+    subtext: "מביא נתונים מהשרת",
+    scopeSelector: ".main-content",
+    minShow: 300
   });
+});
+
   (function hookEditMemberModalEvents() {
   const saveBtn   = document.getElementById('edit_save_btn');
   const cancelBtn = document.getElementById('edit_cancel_btn');
