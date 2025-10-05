@@ -213,34 +213,35 @@ async function loadLogs(){
     if (nameEl) nameEl.textContent = user.username || user.name || "משתמש";
     if (roleEl) roleEl.textContent = user.role || "משתמש";
   }
-  async function loadTenant() {
-    try {
-      const res = await fetch("/api/tenant/info", { credentials: "include" });
+async function loadTenant() {
+  try {
+    const res = await fetch("/tenant/info", { credentials: "include" }); // או השאר /api/tenant/info – יש אליאס בשרת
+    if (res.ok) {
       const data = await res.json();
       if (data?.ok) {
-        setUserUI({
-          username: data.currentUser?.name,
-          role: data.currentUser?.role
-        });
+        setUserUI({ username: data.currentUser?.name, role: data.currentUser?.role });
         tenantData = normalizeTenant(data);
         renderTenant();
         applyFeatureGates();
         return;
       }
-    } catch (e) { console.error("loadTenant error", e); }
-    tenantData = {
-      name: "העסק שלי",
-      createdAt: new Date().toISOString(),
-      ownerName: "—",
-      ownerEmail: "—",
-      address: "",
-      phone: "",
-      team: [],
-      features: {}
-    };
-    renderTenant();
-    applyFeatureGates();
-  }
+    }
+  } catch (_) {}
+  // fallback קשיח ובטוח
+  tenantData = {
+    name: "העסק שלי",
+    createdAt: new Date().toISOString(),
+    ownerName: "—",
+    ownerEmail: "—",
+    address: "",
+    phone: "",
+    team: [],
+    features: {}
+  };
+  renderTenant();
+  applyFeatureGates();
+}
+
   function normalizeTenant(payload) {
     const t = payload?.tenant || {};
     const owner = payload?.owner || null;
@@ -267,6 +268,7 @@ async function loadLogs(){
   }
   function renderTenant() {
     if (!tenantData) return;
+      const teamArr = Array.isArray(tenantData.team) ? tenantData.team : [];
     const nameMain = document.getElementById("tenantName");
     const nameSidebar = document.getElementById("tenantNameSidebar");
     const createdEl = document.getElementById("tenantCreated");
@@ -279,7 +281,7 @@ async function loadLogs(){
     if (ownerEmailEl) ownerEmailEl.textContent = tenantData.ownerEmail || "—";
     renderTeamList(tenantData.team);
     const teamCount = document.getElementById("teamCount");
-    if (teamCount) teamCount.textContent = String(tenantData.team.length || 0);
+    if (teamCount) teamCount.textContent = String(teamArr.length)
     const sName  = document.getElementById("settingsTenantName");
     const sAddr  = document.getElementById("settingsAddress");
     const sPhone = document.getElementById("settingsPhone");

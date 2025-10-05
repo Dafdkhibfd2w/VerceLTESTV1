@@ -1158,6 +1158,7 @@ app.put("/api/user/update", authenticateUser, async (req, res) => {
 
 // Middleware לבדיקת authentication
 
+// helper: הופך Map/אובייקט של features לפשוט
 function plainFeatures(f) {
   if (!f) return {};
   if (f instanceof Map) return Object.fromEntries(f);
@@ -1165,83 +1166,85 @@ function plainFeatures(f) {
   return {};
 }
 
-
-app.get("/api/tenant/info", authenticateUser, async (req, res) => {
+// ⚠️ אותו handler לשני מסלולים – עם/בלי /api
+app.get(['/tenant/info', '/api/tenant/info'], authenticateUser, async (req, res) => {
   try {
-    const user = req.user;
+    const user   = req.user;
+    const tenant = await Tenant.findById(user.TenantID).lean();
 
-    // תומך גם ב-TenantID מאוכלס (populate) וגם ב-ObjectId רגיל
-    const tenantId = user?.TenantID?._id || user?.TenantID;
-    const tenant = await Tenant.findById(tenantId).lean();
-
-    // ❗ חובה לבדוק לפני גישה לשדות
     if (!tenant) {
-      return res.status(404).json({ ok: false, message: "עסק לא נמצא" });
+      return res.status(404).json({ ok:false, message:'עסק לא נמצא' });
     }
 
-    // נירמול פיצ'רים לאובייקט פשוט
-    const featuresObj = plainFeatures(tenant.features);
-
-    // בניית featureState לפי הקטלוג
-    // FEATURE_CATALOG יכול להיות אובייקט (מפתח→מידע) או מערך של מפתחות.
-    const catalogKeys = Array.isArray(globalThis.FEATURE_CATALOG)
-      ? globalThis.FEATURE_CATALOG
-      : (globalThis.FEATURE_CATALOG && typeof globalThis.FEATURE_CATALOG === "object")
-        ? Object.keys(globalThis.FEATURE_CATALOG)
-        : Object.keys(featuresObj); // fallback סביר אם אין קטלוג
-
+    // featureState כ־booleans לפי הקטלוג שלך (אם יש)
     const featureState = Object.fromEntries(
-      catalogKeys.map(k => [k, !!featuresObj[k]])
+      Object.keys(FEATURE_CATALOG || {}).map(k => [k, !!(tenant.features && tenant.features.get && tenant.features.get(k))])
     );
 
-    // חברי צוות + בעלים
     const teamMembers = await User.find({ TenantID: tenant._id })
-      .select("name email role memberships")
+      .select('name email role memberships')
       .lean();
 
     const owner = teamMembers.find(m =>
-      m.memberships?.some(mem =>
-        String(mem?.tenant) === String(tenant._id) && mem.role === "owner"
-      )
-    );
+      m.memberships?.some(mem => String(mem.tenant) === String(tenant._id) && mem.role === 'owner')
+    ) || null;
 
-    const currentRole =
-      user.memberships?.find(mem => String(mem?.tenant) === String(tenant._id))
-        ?.role || "staff";
-
-    return res.json({
+    res.json({
       ok: true,
       tenant: {
-        id: tenant._id,
-        name: tenant.name,
+        id:        tenant._id,
+        name:      tenant.name,
         createdAt: tenant.createdAt,
-        settings: tenant.settings || {},
-        features: featuresObj
+        settings:  tenant.settings,
+        features:  plainFeatures(tenant.features), // ← Map → Object
       },
-      featureState, // 👈 כאן זה מגיע ללקוח
+      featureState,
       currentUser: {
-        id: user._id,
+        id:   user._id,
         name: user.name,
-        email: user.email,
-        role: currentRole
+        email:user.email,
+        role: user.memberships?.find(m => String(m.tenant) === String(tenant._id))?.role || 'staff'
       },
       owner: owner ? { name: owner.name, email: owner.email } : null,
       teamMembers: teamMembers.map(m => ({
-        id: m._id,
+        id:   m._id,
         name: m.name,
-        email: m.email,
-        role:
-          m.memberships?.find(mem => String(mem?.tenant) === String(tenant._id))
-            ?.role || "staff"
+        email:m.email,
+        role: m.memberships?.find(mm => String(mm.tenant) === String(tenant._id))?.role || 'staff'
       }))
     });
-  } catch (err) {
-    console.error("tenant/info error:", err);
-    return res
-      .status(500)
-      .json({ ok: false, message: "שגיאה בטעינת נתוני העסק" });
+  } catch (e) {
+    console.error('tenant/info error:', e);
+    res.status(500).json({ ok:false, message:'שגיאה בטעינת נתוני העסק' });
   }
 });
+
+// רשימת חשבוניות (גם כאן – עם/בלי /api)
+app.get(['/invoices/list', '/api/invoices/list'], authenticateUser, async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    const items = await Invoice.find({ tenant: tenantId })
+      .sort({ createdAt: -1 })
+      .select('number description uploadedByN createdAt file.url')
+      .lean();
+
+    res.json({
+      ok: true,
+      invoices: items.map(x => ({
+        id:          String(x._id),
+        number:      x.number ?? null,
+        description: x.description || '',
+        uploader:    x.uploadedByN || '',
+        at:          x.createdAt,
+        url:         x.file?.url || null
+      }))
+    });
+  } catch (e) {
+    console.error('invoices/list error:', e);
+    res.status(500).json({ ok:false, message:'שגיאה בטעינת חשבוניות' });
+  }
+});
+
 
 // Route לעדכון פרטי עסק (רק לבעלים/מנהלים)
 app.put("/api/tenant/update", authenticateUser, async (req, res) => {
