@@ -1319,7 +1319,8 @@ app.use((err, req, res, next) => {
 });
 
 // ===== Start / Export (Vercel) =====
-if (process.env.VERCEL) {
+const vercel = true;
+if (vercel) {
   module.exports = app;
 } else {
   app.listen(PORT, () => console.log(`🚀 Auth server listening on :${PORT}`));
