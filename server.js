@@ -177,9 +177,9 @@ app.get("/csrf-token", (req, res) => {
 const authenticateUser = async (req, res, next) => {
   try {
     const token = req.cookies.token;
-    if (!token) {
-      return res.redirect('/login.html');
-    }
+if (!token) {
+  return res.status(401).json({ ok: false, message: 'Unauthorized (no token)' });
+}
 
     const decoded = jwt.verify(token, SECRET);
     const user = await User.findById(decoded.id)
@@ -889,12 +889,13 @@ const newTenant = await Tenant.create({
     const payload = { id: user._id.toString() };
     const token = jwt.sign(payload, SECRET, { expiresIn: "7d" });
     
-    res.cookie("token", token, {
-      sameSite: "none",
-      secure: true,
-      httpOnly: true,
-      maxAge: 1000 * 60 * 60 * 24 * 7
-    });
+res.cookie("token", token, {
+  sameSite: "none",    // <<< חובה None בפרודקשן
+  secure: true,        // חובה כי זה HTTPS
+  httpOnly: true,
+  path: "/",
+  maxAge: 1000 * 60 * 60 * 24 * 7
+});
 
     delete emailOtpStore[cleanEmail];
 
@@ -1308,14 +1309,24 @@ app.put("/api/tenant/update", authenticateUser, async (req, res) => {
 
 // Logout (מנקה קוקים)
 app.post("/logout", (req, res) => {
-  res.clearCookie("token", { sameSite: "lax", secure: isProd, httpOnly: true });
+res.clearCookie("token", {
+  sameSite: "none",
+  secure: true,
+  httpOnly: true,
+  path: "/"
+});
   res.clearCookie("user", { sameSite: "lax" });
   res.json({ ok: true, message: "התנתקת בהצלחה" });
 });
 app.get("/logout", (req, res) => {
   const isProd = process.env.NODE_ENV === 'production';
   // חשוב: אותן אפשרויות כמו בזמן ה-set כדי שיימחק בטוח
-  res.clearCookie("token", { sameSite: "lax", secure: isProd, httpOnly: true });
+res.clearCookie("token", {
+  sameSite: "none",
+  secure: true,
+  httpOnly: true,
+  path: "/"
+});
   res.clearCookie("user",  { sameSite: "lax" });
   return res.redirect("/login");
 });
