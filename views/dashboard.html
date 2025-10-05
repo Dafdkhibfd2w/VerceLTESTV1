@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>דשבורד - ניהול העסק</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <i class="fas fa-chart-line"></i>
+      <span id="tenantNameSidebar">העסק שלי</span>
+    </div>
+    
+    <nav class="nav-menu">
+      <a href="#home" class="nav-item" data-section="home">
+        <i class="fas fa-home"></i>
+        <span>דף הבית</span>
+      </a>
+      <a href="#invoices" class="nav-item" data-section="invoices" data-feature="invoices">
+        <i class="fas fa-file-invoice"></i>
+        <span>חשבוניות</span>
+      </a>
+      <a href="#customers" class="nav-item" data-section="customers" data-feature="customers">
+        <i class="fas fa-users"></i>
+        <span>לקוחות</span>
+      </a>
+      <a href="#suppliers" class="nav-item" data-section="suppliers" data-feature="suppliers">
+        <i class="fas fa-building"></i>
+        <span>ספקים</span>
+      </a>
+      <a href="#orders" class="nav-item" data-section="orders" data-feature="orders">
+        <i class="fas fa-box"></i>
+        <span>הזמנות</span>
+      </a>
+      <a href="#reports" class="nav-item" data-section="reports" data-feature="reports">
+        <i class="fas fa-chart-bar"></i>
+        <span>דוחות</span>
+      </a>
+      <a href="#settings" class="nav-item" data-section="settings">
+        <i class="fas fa-cog"></i>
+        <span>הגדרות</span>
+      </a>
+    </nav>
+
+    <div class="user-section">
+      <div class="user-info">
+        <div class="user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div>
+          <div class="user-name" id="currentUserName">טוען...</div>
+          <!-- <div class="user-role" id="currentUserRole">משתמש</div> -->
+        </div>
+      </div>
+      <button class="btn-logout">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1 id="sectionTitle">דף הבית</h1>
+        <p class="header-subtitle" id="sectionSubtitle">לוח בקרה וניהול</p>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle">
+          <i class="fas fa-moon" id="themeIcon"></i>
+        </button>
+
+      </div>
+    </header>
+
+    <!-- Content Container -->
+    <div class="content">
+      <!-- 🏠 HOME SECTION -->
+      <section id="section-home" class="section active">
+        <!-- Business Info Card -->
+        <div class="info-section">
+          <div class="card info-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-building"></i>
+                פרטי העסק
+              </h3>
+              <button class="btn btn-outline btn-sm" id="editTenantBtn">
+                <i class="fas fa-edit"></i>
+                ערוך
+              </button>
+            </div>
+            
+            <div class="card-body">
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">שם העסק:</span>
+                  <span class="info-value" id="tenantName">טוען...</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">תאריך הקמה:</span>
+                  <span class="info-value" id="tenantCreated">טוען...</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">בעלים:</span>
+                  <span class="info-value" id="ownerName">טוען...</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">אימייל בעלים:</span>
+                  <span class="info-value" id="ownerEmail">טוען...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card logs-card">
+  <div class="card-header">
+    <h3><i class="fas fa-clock-rotate-left"></i> יומן פעילות</h3>
+  </div>
+  <div class="card-body">
+    <div class="logs-list" id="logsList">
+      <div class="loading">טוען...</div>
+    </div>
+  </div>
+</div>
+
+          <!-- Team Members Card -->
+          <div class="card team-card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-users"></i>
+                צוות העבודה
+              </h3>
+              <button class="btn btn-outline btn-sm" id="btnAddMember">
+                <i class="fas fa-user-plus"></i>
+                הוסף משתמש
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="team-list" id="teamList">
+                <div class="loading">טוען...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <!-- <div class="stat-card">
+            <div class="stat-icon" style="background: var(--primary);">
+              <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">₪0</div>
+              <div class="stat-label">הכנסות החודש</div>
+            </div>
+          </div> -->
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success);">
+              <i class="fas fa-file-invoice-dollar"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="invoices-length">0</div>
+              <div class="stat-label">חשבוניות</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning);">
+              <i class="fas fa-truck"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value">0</div>
+              <div class="stat-label">ספקים פעילים</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon" style="background: var(--info);">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-value" id="teamCount">0</div>
+              <div class="stat-label">חברי צוות</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 📄 INVOICES SECTION -->
+<section id="section-invoices" class="section" data-feature="invoices">
+  <div class="page-display">
+  <div class="card">
+    <div class="card-header">
+      <div class="header-filters">
+        <button class="btn btn-primary btn-sm" id="btnUploadInvoice">
+          <i class="fas fa-upload"></i>
+          העלה חשבונית
+        </button>
+        <input type="file" id="invoiceFileInput" accept=".pdf,image/*" hidden>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="empty-state" id="invoicesEmpty">
+        <i class="fas fa-file-invoice" style="font-size:4rem;color:var(--text-light);margin-bottom:var(--space-lg);"></i>
+        <h3>אין חשבוניות עדיין</h3>
+        <p>צור או העלה את החשבונית הראשונה שלך</p>
+        <!-- ❌ להסיר מכאן את כפתור ההעלאה שהיה -->
+      </div>
+
+      <div id="invoicesList" class="invoices-list" style="display:none"></div>
+    </div>
+  </div>
+  </div>
+</section>
+
+
+      <!-- 👥 CUSTOMERS SECTION -->
+      <section id="section-customers" class="section" data-feature="customers">
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-users"></i>
+              לקוחות
+            </h3>
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" placeholder="חפש לקוח..." />
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="empty-state">
+              <i class="fas fa-users" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
+              <h3>אין לקוחות עדיין</h3>
+              <p>הוסף את הלקוח הראשון שלך</p>
+              <button class="btn btn-primary mt-lg">
+                <i class="fas fa-user-plus"></i>
+                הוסף לקוח
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 🏢 SUPPLIERS SECTION -->
+      <section id="section-suppliers" class="section" data-feature="suppliers">
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-building"></i>
+              ספקים
+            </h3>
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="text" placeholder="חפש ספק..." />
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="empty-state">
+              <i class="fas fa-building" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
+              <h3>אין ספקים עדיין</h3>
+              <p>הוסף את הספק הראשון שלך</p>
+              <button class="btn btn-primary mt-lg">
+                <i class="fas fa-plus"></i>
+                הוסף ספק
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 📦 ORDERS SECTION -->
+      <section id="section-orders" class="section" data-feature="orders">
+        <div class="card">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-box"></i>
+              הזמנות
+            </h3>
+            <div class="status-filters">
+              <button class="filter-btn active">הכל</button>
+              <button class="filter-btn">ממתין</button>
+              <button class="filter-btn">בטיפול</button>
+              <button class="filter-btn">הושלם</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="empty-state">
+              <i class="fas fa-box" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
+              <h3>אין הזמנות עדיין</h3>
+              <p>צור את ההזמנה הראשונה שלך</p>
+              <button class="btn btn-primary mt-lg">
+                <i class="fas fa-plus"></i>
+                הזמנה חדשה
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 📊 REPORTS SECTION -->
+      <section id="section-reports" class="section" data-feature="reports">
+        <div class="reports-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-chart-line"></i>
+                דוח מכירות
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-placeholder">
+                <i class="fas fa-chart-line" style="font-size: 3rem; color: var(--text-light);"></i>
+                <p>הגרפים יופיעו כאן</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-chart-pie"></i>
+                התפלגות הכנסות
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="chart-placeholder">
+                <i class="fas fa-chart-pie" style="font-size: 3rem; color: var(--text-light);"></i>
+                <p>הגרפים יופיעו כאן</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ⚙️ SETTINGS SECTION -->
+      <section id="section-settings" class="section">
+        <div class="settings-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-building"></i>
+                הגדרות עסק
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <label>שם העסק</label>
+                <input type="text" id="settingsTenantName" placeholder="שם העסק" />
+              </div>
+              <div class="row">
+                <label>כתובת</label>
+                <input type="text" id="settingsAddress" placeholder="כתובת העסק" />
+              </div>
+              <div class="row">
+                <label>טלפון</label>
+                <input type="tel" id="settingsPhone" placeholder="050-1234567" />
+              </div>
+              <button class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                שמור שינויים
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-user"></i>
+                הגדרות אישיות
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <label>שם מלא</label>
+                <input type="text" id="settingsUserName" placeholder="שם מלא" />
+              </div>
+              <div class="row">
+                <label>אימייל</label>
+                <input type="email" id="settingsEmail" placeholder="email@example.com" disabled />
+              </div>
+              <button class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                שמור שינויים
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3>
+                <i class="fas fa-palette"></i>
+                נושא תצוגה
+              </h3>
+            </div>
+            <div class="card-body">
+              <p style="margin-bottom: var(--space-md);">בחר את מצב התצוגה המועדף עליך</p>
+              <div class="theme-options">
+                <button class="theme-option">
+                  <i class="fas fa-sun"></i>
+                  <span>בהיר</span>
+                </button>
+                <button class="theme-option">
+                  <i class="fas fa-moon"></i>
+                  <span>כהה</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Edit Modal (existing) -->
+  <div class="modal hidden" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>עריכת פרטי העסק</h3>
+        <button class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <label>שם העסק</label>
+          <input type="text" id="editTenantName" placeholder="שם העסק" />
+        </div>
+        <div class="row">
+          <label>כתובת</label>
+          <input type="text" id="editTenantAddress" placeholder="כתובת העסק" />
+        </div>
+        <div class="row">
+          <label>טלפון</label>
+          <input type="tel" id="editTenantPhone" placeholder="050-1234567" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline closeee">ביטול</button>
+        <button class="btn btn-primary">שמור שינויים</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="/js/ui.js"></script>
+  <script defer src="/js/dashboard.js"></script>
+  <nav id="bottomNav" class="bottom-nav" aria-label="ניווט תחתון">
+  <!-- ימולא דינמית ע"י JS -->
+</nav>
+<!-- Add Member Modal -->
+<div id="addMemberModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="addMemberTitle">
+  <div class="modal-content" style="max-width:520px">
+    <div class="modal-header">
+      <h3 id="addMemberTitle"><i class="fas fa-user-plus"></i> הוספת משתמש חדש</h3>
+      <button class="modal-close" type="button" aria-label="סגור">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <form id="addMemberForm" novalidate>
+        <div class="form-row">
+          <label>שם מלא</label>
+          <input type="text" id="am_name" required placeholder="לדוגמה: ישראל ישראלי" />
+          <small class="hint">שם שיוצג בתוך המערכת</small>
+        </div>
+
+        <div class="form-row">
+          <label>אימייל</label>
+          <input type="email" id="am_email" required placeholder="user@example.com" />
+        </div>
+
+        <div class="form-row">
+          <label>סיסמה זמנית</label>
+          <input type="password" id="am_password" required minlength="8" placeholder="לפחות 8 תווים" />
+          <small class="hint">העובד יוכל להחליף בהתחברות הראשונה</small>
+        </div>
+
+        <div class="form-row">
+          <label>תפקיד</label>
+          <select id="am_role" required>
+            <option value="employee">עובד</option>
+            <option value="shift_manager">אחמ"ש</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label class="checkbox">
+            <input type="checkbox" id="am_sendInvite" checked />
+            שלח מייל הזמנה לעובד
+          </label>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline modal-cancel">ביטול</button>
+      <button id="am_submit" class="btn btn-primary">צור משתמש</button>
+    </div>
+  </div>
+</div>
+<div id="editMemberModal" class="modal hidden">
+  <div class="modal-content">
+    <h2>עריכת עובד</h2>
+    
+    <label>שם מלא</label>
+    <input type="text" id="edit_name" placeholder="שם העובד">
+
+    <label>תפקיד</label>
+    <select id="edit_role">
+      <option value="employee">עובד רגיל</option>
+      <option value="shift_manager">אחמ״ש</option>
+      <option value="owner">מנהל</option>
+    </select>
+
+    <label>סטטוס</label>
+    <select id="edit_status">
+      <option value="active">פעיל</option>
+      <option value="inactive">מושבת</option>
+    </select>
+
+    <div class="modal-actions">
+      <button id="edit_cancel_btn">ביטול</button>
+      <button id="edit_save_btn">שמור שינויים</button>
+    </div>
+  </div>
+</div>
+
+
+</body>
+</html>

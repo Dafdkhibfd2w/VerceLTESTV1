@@ -1,0 +1,483 @@
+/* ===== Admin Shell ===== */
+.admin-wrap{
+  padding: var(--space-2xl);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.admin-header{
+  background: linear-gradient(135deg, rgba(74,144,226,.12), transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: clamp(20px, 3vw, 28px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  box-shadow: var(--shadow);
+}
+
+.admin-header .title{
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  font-weight: 700;
+  color: var(--text);
+}
+
+.admin-header .subtitle{
+  color: var(--text-secondary);
+  margin-top: 6px;
+  font-size: var(--text-sm);
+}
+
+.toolbar{
+  margin: var(--space-xl) 0 var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.search{
+  flex: 1;
+  position: relative;
+}
+.search input{
+  width: 100%;
+  padding: 14px 48px 14px 14px;
+  border: 2px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+  border-radius: var(--radius-lg);
+  transition: border var(--transition), box-shadow var(--transition);
+}
+.search input:focus{
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(74,144,226,.12);
+}
+.search .ico{
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+/* ===== Card ===== */
+.admin-card{
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* ===== Table ===== */
+.admin-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.admin-table thead th{
+  background: var(--bg);
+  color: var(--text-secondary);
+  font-weight: 700;
+  text-align: right;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.admin-table td:nth-child(1){ width: 38%; }  /* עסק */
+.admin-table td:nth-child(2){ width: 32%; }  /* בעלים */
+.admin-table td:nth-child(3){ width: 22%; }  /* יצירת קשר */
+.admin-table td:nth-child(4),
+.admin-table td:nth-child(5){ width: 8%; }   /* סטטוס + טוגל */
+.admin-table tbody td{
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  color: var(--text);
+}
+.admin-table tbody tr:hover{
+  background: var(--bg-hover);
+}
+.admin-table .col-name{ width: 28%; }
+.admin-table .col-owner{ width: 28%; }
+.admin-table .col-contact{ width: 26%; }
+.admin-table .col-status{ width: 10%; text-align:center; }
+.admin-table .col-toggle{ width: 8%; text-align:center; }
+
+/* ===== Responsive Table for Mobile ===== */
+
+
+/* טוויקים קטנים */
+.t-info .t-title bdi, .t-info .t-sub bdi { unicode-bidi: plaintext; } /* RTL+אנגלית יציב */
+
+/* עמודת פיצ'רים */
+.features-bar{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  flex-wrap: wrap;
+}
+
+.feature-pill{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background: var(--bg);
+  border:1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  box-shadow: var(--shadow-sm);
+}
+.feature-pill i { color: var(--text-secondary); }
+.feature-label { font-size: 0.9rem; }
+
+/* chip מוצג רק במובייל */
+@media (min-width: 900px) {
+  .feature-pill .chip { display: none !important; }
+}
+
+/* במובייל – השורה הופכת לכרטיסים עם כותרת data-label (כבר אצלך),
+   לכן נשאיר chip נראה ומאפשר סריקה מהירה */
+@media (max-width: 600px) {
+  .features-bar { gap: 10px; }
+  .feature-label { font-size: .95rem; }
+}
+
+
+/* Owner / Name cell */
+.t-row{ display:flex; align-items:flex-start; gap:12px; }
+.t-avatar{ flex:0 0 36px; width:36px; height:36px; border-radius:9999px; display:flex; align-items:center; justify-content:center; }
+
+.t-info{ flex:1 1 auto; min-width:0; }
+.t-title{
+  font-weight: 700; color: var(--text);
+   text-overflow: ellipsis; white-space: nowrap;
+}
+.t-sub{
+  font-size: var(--text-sm); color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Chip */
+.chip{
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  border: 1px solid transparent;
+}
+.chip-on{ background: var(--success-light); color: var(--success); border-color: rgba(16,185,129,.25); }
+.chip-off{ background: var(--error-light); color: var(--error); border-color: rgba(239,68,68,.25); }
+
+/* Switch */
+.switch{ position:relative; width:44px; height:26px; display:inline-block; }
+.switch input{ display:none; }
+.switch .slider{
+  position:absolute; inset:0; cursor:pointer;
+  background: var(--bg-alt);
+  border-radius: var(--radius-full);
+  transition: background var(--transition);
+}
+.switch .slider:before{
+  content:""; position:absolute; height:18px; width:18px;
+  left:4px; top:4px; border-radius:50%;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow);
+  transition: transform var(--transition);
+}
+.switch input:checked + .slider{
+  background: var(--success);
+}
+.switch input:checked + .slider:before{
+  transform: translateX(18px);
+}
+.admin-table { table-layout: auto; }
+/* Empty */
+.empty-state{
+  padding: 40px; text-align:center; color: var(--text-secondary);
+}
+.empty-state i{ font-size: 2rem; color: var(--text-light); }
+
+
+
+.sheet-overlay {
+  position: fixed; inset: 0; z-index: 6000;
+  background: rgba(0,0,0,.35); backdrop-filter: blur(2px);
+  display: none; align-items: stretch; justify-content: flex-start; /* RTL ידביק לימין */
+}
+.sheet-overlay.show { display: flex; }
+
+.sheet-panel {
+  width: min(520px, 95vw);
+  background: var(--bg-surface);
+  border-inline-start: 1px solid var(--border);
+  box-shadow: var(--shadow-xl);
+  margin-inline-start: auto; /* RTL: מימין; ב-LTR אפשר לשנות */
+  display: grid; grid-template-rows: auto 1fr auto;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  animation: sheetIn .25s ease-out;
+}
+@keyframes sheetIn { from { transform: translateX(20px); opacity: 0; } }
+
+.sheet-header, .sheet-footer {
+  padding: var(--space-lg); border-bottom: 1px solid var(--border);
+}
+.sheet-footer { border-top: 1px solid var(--border); border-bottom: 0; display:flex; gap:10px; justify-content:flex-start; }
+
+.sheet-header h3 { margin: 0; font-size: var(--text-xl); }
+.sheet-close { background: transparent; border:0; color: var(--text); font-size: 1.1rem; }
+
+.sheet-body { padding: var(--space-lg); overflow:auto; }
+
+.features-grid {
+  display: grid; gap: 12px;
+  grid-template-columns: 1fr;        /* מובייל */
+}
+@media (min-width: 540px){
+  .features-grid { grid-template-columns: 1fr 1fr; }  /* דסקטופ: 2 בעמודה */
+}
+
+.feature-item {
+  border:1px solid var(--border); border-radius: var(--radius);
+  padding:12px; display:flex; gap:10px; align-items:center;
+  background: var(--bg);
+}
+.feature-item .meta { flex:1; min-width:0; }
+.feature-item .title { font-weight:700; }
+.feature-item .desc { font-size: var(--text-sm); color: var(--text-secondary); }
+
+/* ===== תיקון מובייל מלא ===== */
+@media (max-width: 900px) {
+  .admin-wrap {
+    padding: var(--space-md);
+  }
+  
+  .admin-header {
+    padding: var(--space-lg);
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .search {
+    width: 100%;
+  }
+  
+  /* הסתרת טבלה רגילה */
+  .admin-table thead { 
+    display: none; 
+  }
+  
+  .admin-table, 
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    width: 100%;
+  }
+  
+  /* כרטיס עסק */
+  .admin-table tbody tr {
+    margin-bottom: var(--space-lg);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  
+  .admin-table tbody tr:hover {
+    box-shadow: var(--shadow);
+  }
+  
+  /* כל שדה בכרטיס */
+  .admin-table td {
+    display: block !important;
+    border: 0;
+    padding: var(--space-md);
+    text-align: right;
+    position: relative;
+    width: 100% !important;
+  }
+  
+  .admin-table td:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+  
+  /* כותרת השדה */
+  .admin-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* שדה עסק - ללא כותרת */
+  .admin-table .col-name::before {
+    display: none;
+  }
+  
+  .admin-table .col-name {
+    background: linear-gradient(135deg, rgba(74,144,226,.08), transparent);
+    padding: var(--space-lg) !important;
+  }
+  
+  /* תיקון t-row במובייל */
+  .admin-table .t-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+    width: 100%;
+  }
+  
+  /* תיקון אווטאר */
+  .admin-table .t-avatar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    border-radius: 50% !important;
+  }
+  
+  .admin-table .col-name .t-avatar {
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 1.4rem !important;
+  }
+  
+  .admin-table .col-owner .t-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    background: rgba(74,144,226,.12);
+    color: var(--primary);
+  }
+  
+  /* תיקון t-info */
+  .admin-table .t-info {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    display: block !important;
+  }
+  
+  /* תיקון טקסטים */
+  .admin-table .t-title,
+  .admin-table .t-sub {
+    display: block !important;
+    width: 100% !important;
+    white-space: normal !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    text-overflow: clip !important;
+    overflow: visible !important;
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    direction: rtl !important;
+    unicode-bidi: embed !important;
+  }
+  
+  .admin-table .col-name .t-title {
+    font-size: 1.25rem !important;
+    line-height: 1.3 !important;
+    margin-bottom: 6px !important;
+    font-weight: 700 !important;
+  }
+  
+  .admin-table .col-name .t-sub {
+    font-size: 0.9rem !important;
+  }
+  
+  .admin-table .col-owner .t-title {
+    font-size: 1.05rem !important;
+    margin-bottom: 4px !important;
+  }
+  
+  .admin-table .col-owner .t-sub {
+    font-size: 0.88rem !important;
+  }
+  
+  /* שדה פרטי התקשרות */
+  .admin-table .col-contact .t-info {
+    width: 100% !important;
+  }
+  
+  .admin-table .col-contact .t-title {
+    display: flex !important;
+    flex-direction: row-reverse !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-weight: 600 !important;
+    font-size: 1.05rem !important;
+    direction: ltr !important;
+    text-align: right !important;
+    justify-content: flex-end !important;
+  }
+  
+  .admin-table .col-contact .t-title::before {
+    content: "📞" !important;
+    font-size: 1.1rem !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .admin-table .col-contact .t-sub {
+    margin-top: 8px !important;
+    line-height: 1.5 !important;
+    font-size: 0.9rem !important;
+    direction: rtl !important;
+  }
+  
+  /* כפתור פיצ'רים */
+  .admin-table .col-features {
+    background: var(--bg);
+    padding: var(--space-md) !important;
+  }
+  
+  .admin-table .col-features::before {
+    display: none;
+  }
+  
+  .btn-features {
+    width: 100% !important;
+    padding: 14px !important;
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+}
+
+/* טבלט */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .admin-wrap {
+    padding: var(--space-lg);
+  }
+  
+  .admin-table td:nth-child(1) { width: 30%; }
+  .admin-table td:nth-child(2) { width: 30%; }
+  .admin-table td:nth-child(3) { width: 25%; }
+  .admin-table td:nth-child(4) { width: 15%; }
+  
+  .admin-table thead th,
+  .admin-table tbody td {
+    padding: 10px 12px;
+    font-size: var(--text-sm);
+  }
+}

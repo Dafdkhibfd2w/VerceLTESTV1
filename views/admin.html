@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>פאנל ניהול העסקים</title>
+
+  <!-- Fonts + Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-wrap">
+    <!-- Header -->
+    <header class="admin-header">
+      <div>
+        <div class="title">פאנל ניהול</div>
+        <div class="subtitle">ניהול מודולים לכל העסקים</div>
+      </div>
+      <div class="header-actions" style="display:flex; gap:12px;">
+        <a href="/" class="btn btn-outline"><i class="fas fa-arrow-right"></i> חזרה לדשבורד</a>
+        <button id="themeToggleBtn" class="btn btn-secondary" aria-label="החלפת מצב תצוגה">
+          <i id="themeIcon" class="fas fa-moon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search">
+        <input id="tenantSearch" type="search" placeholder="... חפש עסק" aria-label="חיפוש עסק" />
+        <i class="fas fa-search ico"></i>
+      </div>
+    </div>
+
+    <!-- Card + Table -->
+    <div class="admin-card">
+      <div id="tenantsTableWrap">
+        <!-- JS יכניס כאן את הטבלה -->
+      </div>
+    </div>
+  </div>
+<div class="sheet-overlay" id="featuresSheet">
+  <div class="sheet-panel">
+    <div class="sheet-header">
+      <h3 id="sheetTitle">פיצ'רים לעסק</h3>
+      <button class="sheet-close" aria-label="סגור"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="sheet-body">
+      <div class="features-grid" id="featuresList"></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-outline" id="sheetCancel">ביטול</button>
+      <button class="btn" id="sheetSave">שמור</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Scripts -->
+  <script src="/js/ui.js"></script>
+  <script defer src="/js/admin.js"></script>
+  
+</body>
+</html>
