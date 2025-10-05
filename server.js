@@ -841,82 +841,102 @@ app.post("/auth/verify-email-code", async (req, res) => {
     const cleanEmail = String(email || "").trim().toLowerCase();
     const rec = emailOtpStore[cleanEmail];
 
-    if (!isEmail(cleanEmail)) 
+    if (!isEmail(cleanEmail))
       return res.status(400).json({ ok: false, message: "אימייל לא תקין" });
-    
-    if (!rec) 
+
+    if (!rec)
       return res.status(400).json({ ok: false, message: "לא נשלח קוד" });
-    
+
     if (rec.expires < Date.now()) {
       delete emailOtpStore[cleanEmail];
       return res.status(400).json({ ok: false, message: "קוד פג תוקף" });
     }
-    
-    if (rec.code !== String(code)) 
+
+    if (rec.code !== String(code))
       return res.status(400).json({ ok: false, message: "קוד שגוי" });
 
     // ✅ בודקים אם המשתמש קיים
     let user = await User.findOne({ email: cleanEmail });
-    
+
     if (!user) {
       // 🔹 שלב 1: יוצרים User תחילה (ללא Tenant)
-      user = await User.create({
-        username: rec.name,
-        email: cleanEmail,
-        name: rec.name,
-        role: "user",
-        TenantName: rec.tenantName,
-        memberships: []  // ריק בינתיים
-      });
-const slug = slugify(rec.tenantName, { lower: true, strict: true });
-      // 🔹 שלב 2: יוצרים Tenant עם ה-owner שיצרנו
-const newTenant = await Tenant.create({
-  name: rec.tenantName,
-  slug,                   // 👈 חובה למלא
-  owner: user._id
+const baseUsername = rec.name?.trim() || cleanEmail.split("@")[0];
+const uniqueUsername = `${baseUsername}-${Math.floor(Math.random() * 10000)}`;
+
+user = await User.create({
+  username: uniqueUsername,
+  email: cleanEmail,
+  name: rec.name,
+  role: "user",
+  TenantName: rec.tenantName,
+  memberships: []
 });
+
+      // 🔹 שלב 2: יוצרים Tenant עם ה-owner שיצרנו
+      const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
+      const slug = slugify(tenantName, { lower: true, strict: true });
+
+      const newTenant = await Tenant.create({
+        name: tenantName,
+        slug,
+        owner: user._id
+      });
 
       // 🔹 שלב 3: מעדכנים את ה-User עם ה-Tenant
       user.TenantID = newTenant._id;
-      user.memberships = [{
-        tenant: newTenant._id,
-        role: 'owner'
-      }];
+      user.memberships = [{ tenant: newTenant._id, role: 'owner' }];
       await user.save();
-    }
+    } else {
+  // משתמש קיים - ייצור Tenant חדש נוסף
+  const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
+  const slug = slugify(tenantName, { lower: true, strict: true });
 
-    // ✅ יוצרים JWT token
-    const payload = { id: user._id.toString() };
+  const newTenant = await Tenant.create({
+    name: tenantName,
+    slug,
+    owner: user._id
+  });
+
+  user.TenantID = newTenant._id;
+  user.TenantName = tenantName;
+  user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
+  user.memberships.push({ tenant: newTenant._id, role: 'owner' });
+  await user.save();
+}
+
+    // ✅ יוצרים JWT token כולל TenantID
+    const payload = { id: user._id.toString(), TenantID: user.TenantID?.toString() };
     const token = jwt.sign(payload, SECRET, { expiresIn: "7d" });
-    
-res.cookie("token", token, {
-  sameSite: "none",    // <<< חובה None בפרודקשן
-  secure: true,        // חובה כי זה HTTPS
-  httpOnly: true,
-  path: "/",
-  maxAge: 1000 * 60 * 60 * 24 * 7
-});
+
+    res.cookie("token", token, {
+      sameSite: "none",
+      secure: true,
+      httpOnly: true,
+      path: "/",
+      maxAge: 1000 * 60 * 60 * 24 * 7
+    });
 
     delete emailOtpStore[cleanEmail];
 
-res.json({
-  ok: true,
-  message: "מחובר!",
-  redirect: "/",  // 🆕 הוספה
-  user: {
-    id: user._id,
-    username: user.username || rec.name || cleanEmail.split("@")[0],
-    email: user.email,
-    role: user.role,
-    tenantName: user.TenantName,
-    tenantId: user.TenantID
-  }
-});
+    res.json({
+      ok: true,
+      message: "מחובר!",
+      redirect: "/",
+      user: {
+        id: user._id,
+        username: user.username || rec.name || cleanEmail.split("@")[0],
+        email: user.email,
+        role: user.role,
+        tenantName: user.TenantName,
+        tenantId: user.TenantID
+      }
+    });
   } catch (err) {
     console.error("verify-email-code error:", err);
     res.status(500).json({ ok: false, message: "שגיאה באימות" });
   }
 });
+
 // העלאת חשבונית
 app.post('/api/invoices/upload',
   authenticateUser,
@@ -1075,34 +1095,6 @@ app.get('/api/invoices/list',
 );
 
 // הרשמה ידנית (ללא סיסמה)
-app.post("/register", async (req, res) => {
-  try {
-    const { username, email, name } = req.body || {};
-    if (!username || !email || !name) {
-      return res.status(400).json({ ok: false, message: "חסר נתונים" });
-    }
-
-    const cleanUsername = username.trim().toLowerCase();
-    const cleanEmail    = email.trim().toLowerCase();
-
-    const existing = await User.findOne({ $or: [{ username: cleanUsername }, { email: cleanEmail }] });
-    if (existing) {
-      return res.status(400).json({ ok: false, message: "שם משתמש או אימייל כבר בשימוש" });
-    }
-
-    const user = await User.create({
-      username: cleanUsername,
-      email: cleanEmail,
-      name: name.trim(),
-      role: "user"
-    });
-
-    res.json({ ok: true, message: "נרשמת בהצלחה", user: { id: user._id, username: user.username, email: user.email } });
-  } catch (err) {
-    console.error("register error:", err);
-    res.status(500).json({ ok: false, message: "שגיאה ברישום" });
-  }
-});
 
 // מי מחובר? (ע"פ cookie JWT)
 app.get("/me", authenticateUser, (req,res) => {
@@ -1337,7 +1329,7 @@ app.use((err, req, res, next) => {
 });
 
 // ===== Start / Export (Vercel) =====
-const vercel = true;
+const vercel = false;
 if (vercel) {
   module.exports = app;
 } else {
