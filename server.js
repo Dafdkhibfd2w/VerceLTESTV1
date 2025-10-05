@@ -117,6 +117,7 @@ app.use((req, res, next) => {
   }
 })();
 
+const mongoose = require("mongoose");
 
 mongoose.set('bufferCommands', false); // לא לבאפר פעולות אם אין חיבור
 app.use(async (req, res, next) => {
@@ -545,7 +546,6 @@ await log(req, 'member:create', {
 
 
 // ===== Team Members Update/Delete =====
-const mongoose = require("mongoose");
 
 function getRoleForTenant(userDoc, tenantId) {
   try {
