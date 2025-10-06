@@ -1,4 +1,4 @@
-// server.js (auth-only)
+// server.js (auth + app)
 require("dotenv").config();
 
 const express       = require("express");
@@ -11,31 +11,29 @@ const hpp           = require("hpp");
 const cors          = require("cors");
 const csrf          = require("csurf");
 const jwt           = require("jsonwebtoken");
-const ActivityLog = require('./models/ActivityLog.js');
-const { log } = require('./utils/logger');
-const { connectMongoose } = require("./db"); // מחבר ל-MongoDB (מומלץ שמחזיר חיבור יחיד)
-const User = require("./models/user");       // מודל משתמש קיים אצלך
+const mongoose      = require("mongoose");
+const nodemailer    = require("nodemailer");
+const bcrypt        = require("bcrypt");
+const multer        = require("multer");
+const cloudinary    = require("cloudinary").v2;
+const slugify       = require("slugify");
+
+// ===== Models & Utils =====
+const { connectMongoose } = require("./db");
+const ActivityLog = require("./models/ActivityLog");
+const User        = require("./models/user");
+const Tenant      = require("./models/Tenant");
+const Invoice     = require("./models/Invoice");
+const Counter     = require("./models/Counter");
+const { log }     = require("./utils/logger");
 
 // ===== App & Config =====
-const app   = express();
-const PORT  = process.env.PORT || 8080;
-const SECRET = process.env.JWT_SECRET;
+const app    = express();
+const PORT   = process.env.PORT || 8080;
+const SECRET = process.env.JWT_SECRET || "dev_secret_change_me";
 const isProd = process.env.NODE_ENV === "production";
 
-// ===== Middlewares (base) =====
-app.set("trust proxy", 1);
-app.disable("x-powered-by");
-app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-// סטטי (ל־CSS/JS/תמונות)
-app.use(express.static("public", {
-  maxAge: 0,
-  etag: false,
-  lastModified: false
-}));
-// קטלוג פיצ'רים – מקור האמת לשמות/אייקונים/ברירת מחדל
+// ===== Feature Catalog (platform toggles) =====
 const FEATURE_CATALOG = {
   invoices:  { label: "חשבוניות",  icon: "fa-file-invoice", default: false },
   customers: { label: "לקוחות",    icon: "fa-users",         default: false },
@@ -44,7 +42,30 @@ const FEATURE_CATALOG = {
   reports:   { label: "דוחות",     icon: "fa-chart-line",    default: false }
 };
 
-// אבטחה
+// ===== Base Middlewares =====
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(hpp());
+
+// Static
+app.use('/css',   express.static(path.join(__dirname, 'public/css')));
+app.use('/js',    express.static(path.join(__dirname, 'public/js')));
+app.use('/icons', express.static(path.join(__dirname, 'public/icons')));
+app.use(express.static(path.join(__dirname, 'public'), { maxAge: 0, etag: false, lastModified: false }));
+
+// No-cache for dev assets + basic request timer
+app.use((req, res, next) => {
+  const tag = `${req.method} ${req.url}`;
+  console.time(tag);
+  res.on('finish', () => console.timeEnd(tag));
+  if (/\.(html|css|js)$/.test(req.url)) res.setHeader("Cache-Control", "no-store");
+  next();
+});
+
+// Helmet (CSP tuned for your stack)
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "same-site" },
   contentSecurityPolicy: {
@@ -52,42 +73,29 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: [
-        "'self'",
-        "'unsafe-inline'",     // הורד בפרודקשן אם אפשר
-        "'unsafe-eval'",       // הורד בפרודקשן אם אפשר
-        "https://www.gstatic.com",
-        "https://www.googleapis.com",
-        "https://www.google.com",
-        "https://apis.google.com",
-        "https://www.recaptcha.net",
-        "https://cdn.jsdelivr.net",
-        "https://vercel.live", "https://*.vercel.live",
+        "'self'","'unsafe-inline'","'unsafe-eval'",
+        "https://www.gstatic.com","https://www.googleapis.com","https://www.google.com",
+        "https://apis.google.com","https://www.recaptcha.net","https://cdn.jsdelivr.net",
+        "https://vercel.live","https://*.vercel.live"
       ],
       connectSrc: [
-        "'self'",
-        "https://www.gstatic.com",
-        "https://www.googleapis.com",
-        "https://identitytoolkit.googleapis.com",
-        "https://securetoken.googleapis.com",
-        "https://www.recaptcha.net",
-        "https://cdn.jsdelivr.net",
-        "https://vercel.live", "https://*.vercel.live",
-        "wss://vercel.live",   "wss://*.vercel.live",
+        "'self'","https://www.gstatic.com","https://www.googleapis.com",
+        "https://identitytoolkit.googleapis.com","https://securetoken.googleapis.com",
+        "https://www.recaptcha.net","https://cdn.jsdelivr.net",
+        "https://vercel.live","https://*.vercel.live","wss://vercel.live","wss://*.vercel.live"
       ],
       frameSrc: [
-        "'self'",
-        "https://www.google.com",
-        "https://www.gstatic.com",
-        "https://www.recaptcha.net",
-        "https://vercel.live", "https://*.vercel.live",
+        "'self'","https://www.google.com","https://www.gstatic.com",
+        "https://www.recaptcha.net","https://vercel.live","https://*.vercel.live"
       ],
-      imgSrc: ["'self'", "data:", "blob:", "https:"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
-      fontSrc:  ["'self'", "data:", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'","data:","blob:","https:"],
+      styleSrc: ["'self'","'unsafe-inline'","https://fonts.googleapis.com","https://cdnjs.cloudflare.com"],
+      fontSrc:  ["'self'","data:","https://fonts.gstatic.com","https://cdnjs.cloudflare.com"]
     }
   }
 }));
 
+// CORS (update domains as needed)
 app.use(cors({
   origin: [
     "https://verce-ltestv-1.vercel.app",
@@ -96,246 +104,210 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(hpp());
-
-// אין קאשינג לקבצי HTML/CSS/JS (לנוחות פיתוח)
-app.use((req, res, next) => {
-    const tag = `${req.method} ${req.url}`;
-  console.time(tag);
-  res.on('finish', () => console.timeEnd(tag));
-  if (/\.(html|css|js)$/.test(req.url)) {
-    res.setHeader("Cache-Control", "no-store");
-  }
-  next();
-});
-
-// ===== Mongo Connect (חד-פעמי) =====
+// ===== Mongo Connect (single) =====
+mongoose.set('bufferCommands', false);
 (async () => {
   try {
     await connectMongoose();
-    
     console.log("✅ Mongo connected");
   } catch (e) {
     console.error("❌ Mongo connect failed:", e);
   }
 })();
-
-const mongoose = require("mongoose");
-
-mongoose.set('bufferCommands', false); // לא לבאפר פעולות אם אין חיבור
+// ensure connection for each request (fast no-op when already connected)
 app.use(async (req, res, next) => {
-  try {
-    await connectMongoose();
-    next();
-  } catch (err) {
-    console.error('DB connect failed:', err);
-    return res.status(503).json({ ok: false, message: 'Database unavailable' });
-  }
+  try { await connectMongoose(); next(); }
+  catch (err) { console.error('DB connect failed:', err); res.status(503).json({ ok:false, message:'Database unavailable' }); }
 });
-// ===== Utils =====
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  standardHeaders: true,
-  legacyHeaders: false
-});
+
+// ===== Helpers =====
+const authLimiter = rateLimit({ windowMs: 15*60*1000, max: 30, standardHeaders: true, legacyHeaders: false });
 app.use(["/login","/register","/auth/request-email-code","/auth/verify-email-code"], authLimiter);
 
-const nodemailer = require("nodemailer");
-const emailOtpStore = Object.create(null);
+const emailOtpStore      = Object.create(null); // { [email]: { code, name, tenantName, tenantPhone, expires } }
+const passwordResetStore = Object.create(null); // { [token]: { email, expires } }
 
 const mailer = nodemailer.createTransport({
   service: "gmail",
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  },
+  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
   tls: { rejectUnauthorized: false },
-  debug: true,
-  logger: true
+  debug: true, logger: true
 });
 
-function genCode() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
-function isEmail(str) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(str || "").toLowerCase());
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,          // HTTPS on Vercel
+  sameSite: "none",
+  path: "/",
+  maxAge: 1000*60*60*24*7
+};
+
+const genCode  = () => Math.floor(100000 + Math.random()*900000).toString();
+const clean    = (s) => String(s||"").trim();
+const cleanEmail = (s) => clean(s).toLowerCase();
+const isEmail  = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail(s));
+
+function signAuthCookie(res, { userId, tenantId, role }) {
+  const payload = { id: String(userId), TenantID: tenantId ? String(tenantId) : undefined, role };
+  const token = jwt.sign(payload, SECRET, { expiresIn: "7d" });
+  res.cookie("token", token, COOKIE_OPTIONS);
+  return token;
 }
 
-// ===== CSRF =====
-const csrfProtection = csrf({
-  cookie: {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProd
+// --- slug helpers (תומך בשמות בעברית/ריקים) ---
+function makeSlugBase(name) {
+  const raw = String(name || '').trim();
+  // ניסיון ראשון: slugify (עלול להחזיר ריק עבור עברית)
+  let s = slugify(raw, { lower: true, strict: true, locale: 'he' });
+
+  // אם יצא ריק (עברית/סמלים) -> fallback בטוח
+  if (!s) {
+    // נסה להחליף רווחים במקף ולהסיר תווים בעייתיים; אם עדיין קצר/ריק, נייצר אוטומטי
+    const ascii = raw
+      .replace(/\s+/g, '-')              // רווחים -> מקפים
+      .replace(/[^a-zA-Z0-9_-]/g, '')    // רק ASCII בסיסי
+      .toLowerCase();
+
+    s = ascii || `biz-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,6)}`;
   }
+  // חתוך לאורך הגיוני (DB / SEO)
+  return s.slice(0, 64);
+}
+
+async function uniqueTenantSlug(name) {
+  const base = makeSlugBase(name);
+  let slug = base;
+  let i = 1;
+  // דאג לייחודיות במסד (index unique על slug)
+  while (await Tenant.exists({ slug })) {
+    slug = `${base}-${i++}`;
+  }
+  return slug;
+}
+
+
+
+// ===== CSRF (optional) =====
+const csrfProtection = csrf({
+  cookie: { httpOnly: true, sameSite: "lax", secure: isProd }
 });
 app.use(csrfProtection);
-app.get("/csrf-token", (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
-const authenticateUser = async (req, res, next) => {
-  try {
-    const token = req.cookies.token;
-if (!token) {
-  return res.status(401).json({ ok: false, message: 'Unauthorized (no token)' });
+app.get("/csrf-token", (req, res) => res.json({ csrfToken: req.csrfToken() }));
+
+// ===== Auth Middlewares =====
+async function loadUserFromToken(req) {
+  const token = req.cookies?.token;
+  if (!token) return null;
+  const dec = jwt.verify(token, SECRET);
+  const user = await User.findById(dec.id).lean();
+  if (!user) return null;
+  return { decoded: dec, user };
 }
 
-    const decoded = jwt.verify(token, SECRET);
-    const user = await User.findById(decoded.id)
-      .populate('TenantID')  // טוען את פרטי הטנאנט
-      .lean();
-    
-    if (!user) {
-      return res.redirect('/login.html');
-    }
-
-    req.user = user;  // שומרים את המשתמש ב-request
+// JSON auth for APIs
+const authenticateUser = async (req, res, next) => {
+  try {
+    const pack = await loadUserFromToken(req);
+    if (!pack) return res.status(401).json({ ok:false, message:"Unauthorized (no token)" });
+    req.user = pack.user;
+    req.auth = pack.decoded; // { id, TenantID, role }
     next();
   } catch (err) {
     console.error('Auth middleware error:', err);
-    res.redirect('/login.html');
+    return res.status(401).json({ ok:false, message:"Unauthorized" });
   }
 };
+
+// Page guard (redirect to /login for HTML pages)
+function requireAuthPage(req, res, next) {
+  loadUserFromToken(req)
+    .then(pack => pack ? next() : res.redirect("/login"))
+    .catch(() => res.redirect("/login"));
+}
+
+// Roles helpers
+function getRoleForTenant(userDoc, tenantId) {
+  try {
+    return (userDoc?.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role || null;
+  } catch { return null; }
+}
+
 function requireTeamManager(req, res, next) {
   const tenantId = req.user.TenantID;
-  const myRole = (req.user.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role;
-
+  const myRole   = getRoleForTenant(req.user, tenantId);
   if (!myRole || !['owner'].includes(myRole)) {
     return res.status(403).json({ ok:false, message:'אין לך הרשאה לניהול צוות' });
   }
   next();
 }
-function requireAuthPage(req, res, next) {
-  try {
-    const token = req.cookies?.token;
-    if (!token) return res.redirect("/login");
-    jwt.verify(token, SECRET);  // אם לא תקין → נקפוץ ל-catch
-    return next();
-  } catch {
-    return res.redirect("/login");
-  }
-}
 
-
-// authz.js
-function isPlatformAdmin(user) {
-  const list = (process.env.PLATFORM_ADMIN_EMAILS || "")
-    .split(",")
-    .map(s => s.trim().toLowerCase())
-    .filter(Boolean);
-
-  const byEnv = list.includes(String(user.email || "").toLowerCase());
-  const byDb  = user.platformRole === "admin";
-  return byEnv || byDb;
-}
-
-// תומך גם ב-CSV וגם ב-JSON array, מסיר רווחים וממיר ל-lowercase
-function parseAdminList(val) {
-  if (!val) return [];
-  try {
-    const arr = JSON.parse(val);
-    if (Array.isArray(arr)) {
-      return arr.map(s => String(s).trim().toLowerCase()).filter(Boolean);
-    }
-  } catch {}
-  return String(val)
-    .split(/[,;|\s]+/)
-    .map(s => s.replace(/^[\[\]'"\s]+|[\[\]'"\s]+$/g, '').trim().toLowerCase())
-    .filter(Boolean);
-}
-
-// נשתמש בשם שהגדרת + שם גיבוי אם השתמשת בו קודם
+// Platform admins
 const PLATFORM_ADMINS = (process.env.PLATFORM_ADMIN_EMAILS || "")
   .split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
 
+function isPlatformAdmin(user) {
+  const email = (user.email || "").toLowerCase();
+  return user.platformRole === "admin" || PLATFORM_ADMINS.includes(email);
+}
+
 function requirePlatformAdmin(req, res, next) {
   if (!req.user) return res.status(401).json({ ok:false, message:"Unauthorized" });
-  const email = (req.user.email || "").toLowerCase();
-  const isAdmin = req.user.platformRole === "admin" || PLATFORM_ADMINS.includes(email);
-  if (!isAdmin) return res.status(403).json({ ok:false, message:"Forbidden" });
+  if (!isPlatformAdmin(req.user)) return res.status(403).json({ ok:false, message:"Forbidden" });
   next();
 }
-app.use('/css', express.static(path.join(__dirname, 'public/css')));
-app.use('/js', express.static(path.join(__dirname, 'public/js')));
-app.use('/icons', express.static(path.join(__dirname, 'public/icons')));
-app.use(express.static(path.join(__dirname, 'public'))); // fallback לכל קובץ אחר בתוך public
-
-// ===== Views (Auth pages only) =====
+function requireRoles(roles = []) {
+  return (req, res, next) => {
+    const tenantId = req.user?.TenantID;
+    if (!tenantId) return res.status(401).json({ ok:false, message: 'Unauthorized' });
+    const role = getRoleForTenant(req.user, tenantId);
+    if (!role || !roles.includes(role)) {
+      // אם זה דף HTML – עדיף רידיירקט במקום JSON
+      if (req.accepts('html')) return res.redirect('/worker');
+      return res.status(403).json({ ok:false, message: 'Forbidden' });
+    }
+    next();
+  };
+}
+function roleHomeFor(user) {
+  const role = getRoleForTenant(user, user.TenantID);
+  return ['owner','manager','shift_manager'].includes(role) ? '/manager' : '/worker';
+}
+// ===== Views =====
 app.get("/login", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "register.html"));
+  res.sendFile(path.join(__dirname, "views", "login.html")); // הדף החדש עם הטאבים
 });
+
+app.get('/', authenticateUser, (req, res) => {
+  const role = getRoleForTenant(req.user, req.user.TenantID);
+  if (['owner','manager','shift_manager'].includes(role)) {
+    return res.redirect('/manager');
+  }
+  return res.redirect('/worker');
+});
+
+app.get('/manager',
+  authenticateUser,
+  requireRoles(['owner','manager','shift_manager']),  // או רק ['owner','manager']
+  (req, res) => res.sendFile(path.join(__dirname, 'views', 'manager.html'))
+);
+
+// אזור עובדים
+app.get('/worker',
+  authenticateUser,
+  (req, res) => res.sendFile(path.join(__dirname, 'views', 'worker.html'))
+);
 
 app.get('/admin', authenticateUser, requirePlatformAdmin, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
-app.get("/", requireAuthPage, (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "dashboard.html"));
-});
-const Tenant = require('./models/Tenant');
-app.get('/api/admin/features-catalog',   authenticateUser, requirePlatformAdmin, (req, res) => {
-  res.json({ ok: true, features: FEATURE_CATALOG });
+// ===== Admin – feature catalog =====
+app.get('/api/admin/features-catalog', authenticateUser, requirePlatformAdmin, (req, res) => {
+  res.json({ ok:true, features: FEATURE_CATALOG });
 });
 
-app.get("/api/admin/tenants",
-  authenticateUser,
-  requirePlatformAdmin,
-  async (req, res) => {
-    const tenants = await Tenant.find({})
-      .select("name createdAt owner settings features")
-      .populate({ path: "owner", select: "name email" })
-      .lean();
-
-    res.json({
-      ok: true,
-      tenants: tenants.map(t => ({
-        id: String(t._id),
-        name: t.name,
-        createdAt: t.createdAt,
-        owner: t.owner ? { name: t.owner.name, email: t.owner.email } : null,
-        settings: t.settings || {},
-        features: t.features || {}
-      }))
-    });
-  }
-);
-
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const Invoice = require('./models/Invoice'); // 👈 הוסף
-const Counter = require('./models/Counter');
-
-async function nextInvoiceNumber(tenantId) {
-  const id = String(tenantId);
-  // מעלה מונה בצורה אטומית; אם לא קיים – ייווצר עם seq=0 ואז יחזור 1
-  let doc = await Counter.findOneAndUpdate(
-    { _id: id },
-    { $inc: { seq: 1 } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-
-  // אם זה הרצה ראשונה ויש כבר חשבוניות עם מספרים, ניישר למקסימום הקיים
-  if (doc.seq === 1) {
-    const last = await Invoice.findOne({ tenant: tenantId, number: { $type: 'number' } })
-      .sort({ number: -1 })
-      .select('number')
-      .lean();
-    if (typeof last?.number === 'number' && last.number >= 1) {
-      doc = await Counter.findOneAndUpdate(
-        { _id: id },
-        { $set: { seq: last.number + 1 } },
-        { new: true }
-      );
-    }
-  }
-  return doc.seq;
-}
-// Multer (זיכרון) להעלאה ל-Cloudinary
-const upload  = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 }});
-
-
-// Cloudinary
+// ===== Cloudinary & Multer (invoices) =====
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 }});
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,
@@ -343,356 +315,535 @@ cloudinary.config({
 });
 const CLOUD_FOLDER = process.env.CLOUDINARY_FOLDER || 'invoices';
 
-function getRoleForTenant(user, tenantId) {
-  return user.memberships?.find(m => String(m.tenant) === String(tenantId))?.role || null;
+async function nextInvoiceNumber(tenantId) {
+  const id = String(tenantId);
+  let doc = await Counter.findOneAndUpdate(
+    { _id: id }, { $inc: { seq: 1 } },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+  if (doc.seq === 1) {
+    const last = await Invoice.findOne({ tenant: tenantId, number: { $type: 'number' } })
+      .sort({ number: -1 }).select('number').lean();
+    if (typeof last?.number === 'number' && last.number >= 1) {
+      doc = await Counter.findOneAndUpdate(
+        { _id: id }, { $set: { seq: last.number + 1 } }, { new: true }
+      );
+    }
+  }
+  return doc.seq;
 }
 
-
-// server.js
-// עדכון פיצ'רים ע"י אדמין פלטפורמה
-app.put("/api/admin/tenants/:id/features",
-  authenticateUser, requirePlatformAdmin, async (req, res) => {
-    const { id } = req.params;
-    const { key, value, ...bulk } = req.body || {};
-
-    const tenant = await Tenant.findById(id);
-    if (!tenant) return res.status(404).json({ ok:false, message:"עסק לא נמצא" });
-
-    // ודא שיש features
-    if (!tenant.features) {
-      tenant.features = new Map();
-    }
-
-    // אם זה לא Map, המר ל-Map (תאימות לעבר)
-    if (!(tenant.features instanceof Map) && typeof tenant.features === 'object') {
-      tenant.features = new Map(Object.entries(tenant.features));
-    }
-
-    let changed = false;
-
-    if (typeof key === "string") {
-      tenant.features.set(key, !!value);
-      changed = true;
-    } else {
-      for (const [k, v] of Object.entries(bulk)) {
-        tenant.features.set(k, !!v);
-        changed = true;
-      }
-    }
-
-    if (changed) tenant.markModified('features');
-
-    await tenant.save();
-
-    // החזר תמיד אובייקט פשוט לפרונט
-    const plain = Object.fromEntries(tenant.features instanceof Map
-      ? tenant.features
-      : Object.entries(tenant.features || {}));
-
-    res.json({ ok:true, features: plain });
-  }
-);
-const bcrypt = require("bcrypt");
-
-
-app.post('/api/team/members', authenticateUser,requireTeamManager, async (req, res) => {
+// ===== Feature helpers =====
+function featureOn(features, key) {
+  if (!features) return false;
+  if (typeof features.get === 'function') return !!features.get(key);
+  return !!features[key];
+}
+function featuresToPlain(features) {
+  if (!features) return {};
+  if (typeof features.get === 'function') return Object.fromEntries(features);
+  return { ...features };
+}
+const requireTenantFeature = (feature) => async (req, res, next) => {
   try {
-    let { name, email, password, role = 'employee', sendInvite = true } = req.body || {};
+    const t = await Tenant.findById(req.user.TenantID).select('features');
+    const on = featureOn(t?.features, feature);
+    if (!on) return res.status(403).json({ ok:false, message:'הפיצ׳ר לא פעיל לעסק זה' });
+    next();
+  } catch (e) {
+    console.error('requireTenantFeature error:', e);
+    return res.status(500).json({ ok:false, message:'Server error' });
+  }
+};
 
-    if (!name || !email) {
-      return res.status(400).json({ ok:false, message:'Missing name or email' });
+const Invite = require('./models/Invite');
+
+// ===== AUTH: Owner/Manager via OTP =====
+app.post("/auth/request-email-code", async (req, res) => {
+  try {
+    const { name, email, tenantName, tenantPhone } = req.body || {};
+    const cleanName   = clean(name);
+    const ce          = cleanEmail(email);
+    const tName       = clean(tenantName);
+    const tPhone      = clean(tenantPhone);
+
+    if (!cleanName || !isEmail(ce) || !tName || !tPhone) {
+      return res.status(400).json({ ok:false, message:"יש למלא שם, אימייל, שם עסק ומספר טלפון" });
     }
+    const code = genCode();
+    emailOtpStore[ce] = { code, name: cleanName, tenantPhone: tPhone, tenantName: tName, expires: Date.now() + 5*60*1000 };
 
-    // ניקוי
-    email = String(email).trim().toLowerCase();
-    role = String(role || 'employee').toLowerCase();
+    await mailer.sendMail({
+      from: `"New Deli" <${process.env.SMTP_USER}>`,
+      to: ce,
+      subject: "קוד התחברות",
+      text: `שלום ${cleanName}, הקוד שלך הוא: ${code} (תקף ל-5 דקות).`
+    });
 
-    // ולידציה מול התפקידים החדשים
-    if (!['manager','shift_manager','employee'].includes(role)) {
-      role = 'employee';
-    }
-
-    // אימייל תקין?
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      return res.status(400).json({ ok:false, message:'Invalid email' });
-    }
-
-    // מזהי הטננט מהמשתמש המחובר (המנהל)
-    const tenantId   = req.user.TenantID;      
-    const tenantName = req.user.TenantName || 'העסק שלך';
-    const baseUrl    = process.env.BASE_URL || 'https://your-app-url';
-
-    if (!tenantId) {
-      return res.status(400).json({ ok:false, message:'Missing tenantId on the authenticated user' });
-    }
-
-    // חיפוש משתמש ע"י אימייל (שדה ייחודי גלובלי)
-    let user = await User.findOne({ email });
-
-    // --- מקרה 1: המשתמש כבר קיים במערכת (עם אותו אימייל) ---
-    if (user) {
-      const alreadyMember = user.memberships?.some(m => String(m.tenant) === String(tenantId));
-      if (alreadyMember) {
-        return res.status(409).json({ ok:false, message:'User already belongs to this tenant' });
-      }
-
-      // מוסיפים חברות ל-tenant הזה
-      user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
-      user.memberships.push({ tenant: tenantId, role });
-
-      user.TenantID = tenantId;
-      user.TenantName = tenantName;
-
-      await user.save();
-
-      if (sendInvite) {
-        const subject = `קיבלת גישה ל-${tenantName} במערכת New Deli`;
-        const loginUrl = `${baseUrl}/login`;
-        const text = `שלום ${name},
-
-הוענקה לך גישה ל-${tenantName} במערכת New Deli תחת המשתמש הקיים שלך (${email}).
-לכניסה: ${loginUrl}
-
-אם שכחת סיסמה, ניתן לבצע איפוס במסך ההתחברות.`;
-        const html = `
-          <div style="font-family:Heebo,Arial,sans-serif;line-height:1.6;color:#222">
-            <h2 style="margin:0 0 12px">עודכנה לך גישה ל-New Deli</h2>
-            <p>הוענקה לך גישה לעסק: <b>${tenantName}</b> תחת המשתמש הקיים שלך.</p>
-            <p><a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px">כניסה למערכת</a></p>
-            <p style="color:#555;font-size:14px">אם שכחת סיסמה, אפשר לאפס במסך ההתחברות.</p>
-          </div>
-        `;
-        try {
-          await mailer.sendMail({ from: `"New Deli" <${process.env.SMTP_USER}>`, to: email, subject, text, html });
-        } catch (e) {
-          console.error('invite email (existing user) failed:', e.message);
-        }
-      }
-
-      return res.json({
-        ok: true,
-        member: { id: user.id, name: user.name, email: user.email, memberships: user.memberships },
-        createdNewUser: false,
-        addedMembership: true
-      });
-    }
-
-    // --- מקרה 2: אין משתמש קיים — יוצרים משתמש חדש + חברות ל-tenant ---
-    if (!password || String(password).length < 8) {
-      return res.status(400).json({ ok:false, message:'Password too short (min 8)' });
-    }
-
-    const hash = await bcrypt.hash(password, 12);
-const autoUsername = (name && name.trim())
-  ? name.trim().toLowerCase().replace(/\s+/g, "_")
-  : (email && email.includes("@"))
-    ? email.split("@")[0]
-    : "user" + Date.now();
-
-user = await User.create({
-  username: autoUsername,
-  name: name || "No Name",
-  email,
-  passwordHash: hash,
-  memberships: [{ tenant: tenantId, role }],
-  TenantName: tenantName,
-  TenantID: tenantId,
-  isPlatformAdmin: false
+    res.json({ ok:true, message:"נשלח קוד לאימייל" });
+  } catch (err) {
+    console.error("request-email-code error:", err);
+    res.status(500).json({ ok:false, message:"שגיאה בשליחת הקוד" });
+  }
 });
+app.post('/api/team/invite', authenticateUser, async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    if (!tenantId) return res.status(400).json({ ok:false, message:'Missing tenant context' });
 
-await log(req, 'member:create', {
-  kind: 'User',
-  id:   String(user._id),
-  label:user.name,
-  email:user.email
-}, { role });
+    const myRole = getRoleForTenant(req.user, tenantId);
+    if (!myRole || !['owner','manager'].includes(myRole)) {
+      return res.status(403).json({ ok:false, message:'אין הרשאה להזמין עובדים' });
+    }
+
+    let { email, role='employee', sendInvite=true } = req.body || {};
+    email = String(email || '').trim().toLowerCase();
+    role  = String(role  || 'employee').toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ ok:false, message:'אימייל לא תקין' });
+    if (!['employee','shift_manager','manager'].includes(role)) role = 'employee';
+
+    const tenant = await Tenant.findById(tenantId).lean();
+    if (!tenant) return res.status(404).json({ ok:false, message:'עסק לא נמצא' });
+
+    // אם המשתמש כבר קיים ומשויך – סיים בנימוס
+    const existing = await User.findOne({ email }).lean();
+    if (existing?.memberships?.some(m => String(m.tenant) === String(tenantId))) {
+      return res.status(409).json({ ok:false, message:'המשתמש כבר שייך לעסק' });
+    }
+
+    // צור טוקן הזמנה (תוקף 7 ימים)
+    const token = require('crypto').randomBytes(24).toString('base64url');
+    const expiresAt = new Date(Date.now() + 7*24*60*60*1000);
+
+    await Invite.create({
+      tenant: tenantId,
+      email,
+      role,
+      token,
+      expiresAt,
+      createdBy: req.user._id
+    });
+
+    const baseUrl = process.env.BASE_URL || 'localhost:4000';
+    const inviteUrl = `${baseUrl}/login?invite=${encodeURIComponent(token)}`;
+
     if (sendInvite) {
-      const subject = `קבלת גישה ל-${tenantName} במערכת New Deli`;
-      const loginUrl = `${baseUrl}/login`;
-      const text = `שלום ${name},
-
-נוצר עבורך משתמש במערכת New Deli עבור העסק: ${tenantName}.
-
-אימייל: ${email}
-סיסמה: ${password}
-
-כניסה: ${loginUrl}
-
-מומלץ לשנות סיסמה לאחר ההתחברות הראשונה.`;
+      const subject = `הוזמנת להצטרף ל-${tenant.name} במערכת New Deli`;
+      const text = `שלום,\n\nהוזמנת להצטרף ל-${tenant.name} במערכת New Deli.\nלהשלמת יצירה/הצטרפות לחשבון והגדרת סיסמה:\n${inviteUrl}\n\nהלינק תקף ל-7 ימים.`;
       const html = `
         <div style="font-family:Heebo,Arial,sans-serif;line-height:1.6;color:#222">
-          <h2 style="margin:0 0 12px">ברוך הבא ל-New Deli</h2>
-          <p>נוצר עבורך משתמש עבור העסק: <b>${tenantName}</b>.</p>
-          <div style="background:#f6f7f9;border:1px solid #e3e6ea;border-radius:10px;padding:12px 14px;margin:12px 0">
-            <div><b>אימייל:</b> <span dir="ltr">${email}</span></div>
-            <div><b>סיסמה:</b> <span dir="ltr">${password}</span></div>
-          </div>
-          <p><a href="${loginUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px">התחברות למערכת</a></p>
-          <p style="color:#555;font-size:14px">מומלץ לשנות סיסמה לאחר ההתחברות הראשונה.</p>
+          <h2 style="margin:0 0 12px">הוזמנת ל-${tenant.name}</h2>
+          <p>להשלמת ההרשמה והגדרת סיסמה:</p>
+          <p><a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px">פתח הזמנה</a></p>
+          <p style="color:#555;font-size:14px">הלינק תקף ל-7 ימים.</p>
         </div>
       `;
       try {
         await mailer.sendMail({ from: `"New Deli" <${process.env.SMTP_USER}>`, to: email, subject, text, html });
       } catch (e) {
-        console.error('invite email (new user) failed:', e.message);
+        console.error('invite mail failed:', e.message);
       }
     }
 
-    return res.json({
-      ok: true,
-      member: { id: user.id, name: user.name, email: user.email, memberships: user.memberships },
-      createdNewUser: true,
-      addedMembership: true
-    });
-
+    return res.json({ ok:true, token }); // אם תרצה להציג QR/העתק קישור בממשק
   } catch (e) {
-    console.error(e);
+    console.error('POST /api/team/invite', e);
     return res.status(500).json({ ok:false, message:'Server error' });
   }
 });
-
-
-// ===== Team Members Update/Delete =====
-
-function getRoleForTenant(userDoc, tenantId) {
+app.get('/auth/invite/:token', async (req, res) => {
   try {
-    const m = (userDoc?.memberships || []).find(mm => String(mm.tenant) === String(tenantId));
-    return m?.role || null;
-  } catch { return null; }
-}
+    const inv = await Invite.findOne({ token: req.params.token }).lean();
+    if (!inv || inv.expiresAt < new Date()) return res.status(404).json({ ok:false, message:'הזמנה לא תקפה' });
 
-function isOwner(userDoc, tenantId) {
-  return getRoleForTenant(userDoc, tenantId) === 'owner';
-}
-function isManager(userDoc, tenantId) {
-  return getRoleForTenant(userDoc, tenantId) === 'manager';
-}
-function featureOn(features, key) {
-  if (!features) return false;
-  if (typeof features.get === 'function') return !!features.get(key); // Map/Mongoose Map
-  return !!features[key]; // Object רגיל
-}
+    const tenant = await Tenant.findById(inv.tenant).select('name').lean();
+    return res.json({
+      ok: true,
+      email: inv.email,
+      role: inv.role,
+      tenant: { id: String(inv.tenant), name: tenant?.name || 'העסק' }
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message:'Server error' });
+  }
+});
+app.post('/auth/accept-invite', async (req, res) => {
+  try {
+    const { token, name, password } = req.body || {};
+    const cleanName = String(name || '').trim();
+    const cleanPass = String(password || '');
+    if (!token || !cleanName || cleanPass.length < 8) {
+      return res.status(400).json({ ok:false, message:'נתונים חסרים/סיסמה קצרה' });
+    }
 
-function featuresToPlain(features) {
-  if (!features) return {};
-  if (typeof features.get === 'function') return Object.fromEntries(features); // Map -> Object
-  return { ...features }; // כבר אובייקט
-}
-// עדכון עובד קיים
-app.put('/api/team/members/:id', authenticateUser, async (req, res) => {
+    const inv = await Invite.findOne({ token });
+    if (!inv || inv.expiresAt < new Date()) return res.status(404).json({ ok:false, message:'הזמנה לא תקפה' });
+
+    let user = await User.findOne({ email: inv.email });
+    const tenantId = inv.tenant;
+
+    if (user) {
+      // כבר יש חשבון -> רק מצרפים את החברות אם לא קיימת
+      if (!user.memberships?.some(m => String(m.tenant) === String(tenantId))) {
+        user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
+        user.memberships.push({ tenant: tenantId, role: inv.role });
+      }
+      user.TenantID = tenantId; // לטובת ה־UI שלך
+      user.TenantName = user.TenantName || undefined; // אופציונלי
+      if (!user.name) user.name = cleanName;
+      await user.save();
+    } else {
+      const bcrypt = require('bcrypt');
+      const hash = await bcrypt.hash(cleanPass, 12);
+      const autoUsername = inv.email.split('@')[0];
+
+      user = await User.create({
+        username: autoUsername,
+        name: cleanName,
+        email: inv.email,
+        passwordHash: hash,
+        memberships: [{ tenant: tenantId, role: inv.role }],
+        TenantID: tenantId
+      });
+    }
+
+    await Invite.deleteOne({ _id: inv._id });
+
+    const payload = { id: user._id.toString(), TenantID: tenantId.toString() };
+    const tokenJwt = jwt.sign(payload, SECRET, { expiresIn: '7d' });
+    res.cookie('token', tokenJwt, {
+      sameSite: 'none', secure: true, httpOnly: true, path: '/', maxAge: 7*24*60*60*1000
+    });
+
+    return res.json({ ok:true, redirect:'/' });
+  } catch (e) {
+    console.error('POST /auth/accept-invite', e);
+    return res.status(500).json({ ok:false, message:'Server error' });
+  }
+});
+app.get('/api/team/invites', authenticateUser, async (req, res) => {
   try {
     const tenantId = req.user.TenantID;
     if (!tenantId) return res.status(400).json({ ok:false, message:'Missing tenant context' });
 
-    const editorRole = getRoleForTenant(req.user, tenantId);
-    if (!editorRole || !['owner','manager'].includes(editorRole)) {
-      return res.status(403).json({ ok:false, message:'אין לך הרשאה לערוך עובדים' });
+    // רק owner/manager רואים הזמנות
+    const myRole = (req.user.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role;
+    if (!['owner','manager'].includes(myRole)) {
+      return res.status(403).json({ ok:false, message:'אין הרשאה לצפות בהזמנות' });
     }
 
-    const { id } = req.params;
-    const { name, role, status } = req.body || {};
+    const invites = await Invite.find({ tenant: tenantId, expiresAt: { $gte: new Date() } })
+      .sort({ createdAt: -1 })
+      .select('_id email role token createdAt expiresAt')
+      .lean();
 
-    // מוצאים את העובד היעד
-    const target = await User.findById(id);
-    if (!target) return res.status(404).json({ ok:false, message:'משתמש לא נמצא' });
-
-    // חובה שהעובד שייך לאותו tenant
-    const memIdx = (target.memberships || []).findIndex(m => String(m.tenant) === String(tenantId));
-    if (memIdx === -1) {
-      return res.status(404).json({ ok:false, message:'המשתמש אינו שייך לעסק זה' });
-    }
-
-    const targetRole = target.memberships[memIdx].role;
-
-    // 🔒 אסור לגעת בבעלים
-    if (targetRole === 'owner') {
-      return res.status(403).json({ ok:false, message:'אסור לערוך/להחליף תפקיד לבעלים של העסק' });
-    }
-
-    // חוקים למנהל (owner יכול הכל על לא-בעלים)
-    if (editorRole === 'manager') {
-      // מנהל לא יכול לערוך מנהל אחר או להפוך מישהו ל-owner/manager
-      if (targetRole === 'manager') {
-        return res.status(403).json({ ok:false, message:'מנהל לא יכול לערוך מנהל אחר' });
-      }
-      if (role && ['owner','manager'].includes(String(role).toLowerCase())) {
-        return res.status(403).json({ ok:false, message:'מנהל לא יכול להעלות תפקיד ל-owner/manager' });
-      }
-    }
-
-    // --- נעקוב אחרי ערכים קודמים ל-log
-    const beforeName = target.name;
-    const beforeRole = target.memberships[memIdx].role;
-
-    // עדכון שם (לא חובה)
-    if (typeof name === 'string' && name.trim()) {
-      target.name = name.trim();
-    }
-
-    // עדכון תפקיד (לא חובה)
-    if (typeof role === 'string' && role.trim()) {
-      const clean = role.trim().toLowerCase();
-      const ALLOWED = ['owner','shift_manager','employee']; // התפקידים שהגדרת
-      if (!ALLOWED.includes(clean)) {
-        return res.status(400).json({ ok:false, message:'תפקיד לא תקין' });
-      }
-      target.memberships[memIdx].role = clean;
-    }
-
-    // עדכון סטטוס (אם קיים בסכמה שלך)
-    if (typeof status === 'string' && status.trim()) {
-      const cleanStatus = status.trim().toLowerCase();
-      // target.memberships[memIdx].status = cleanStatus; // אם קיימת עמודה כזו
-    }
-
-    await target.save();
-
-    // --- LOG: נרשום רק אם משהו באמת השתנה
-    const afterName = target.name;
-    const afterRole = target.memberships[memIdx].role;
-
-    if (beforeName !== afterName || beforeRole !== afterRole) {
-      await log(
-        req,
-        'member:update',
-        {
-          kind:  'User',
-          id:    String(target._id),
-          label: target.name,
-          email: target.email
-        },
-        {
-          tenant:    String(tenantId),
-          nameFrom:  String(beforeName || ''),
-          nameTo:    String(afterName  || ''),
-          roleFrom:  String(beforeRole || ''),
-          roleTo:    String(afterRole  || '')
-          // אם תוסיף סטטוס: statusFrom: beforeStatus, statusTo: afterStatus
-        }
-      );
-    }
-
-    return res.json({
-      ok: true,
-      member: {
-        id: target.id,
-        name: target.name,
-        email: target.email,
-        role: target.memberships[memIdx].role
-        // status: target.memberships[memIdx].status ?? 'active'
-      }
-    });
+    return res.json({ ok:true, invites: invites.map(x => ({
+      id: String(x._id),
+      email: x.email,
+      role: x.role,
+      createdAt: x.createdAt,
+      expiresAt: x.expiresAt
+    }))});
   } catch (e) {
-    console.error('PUT /api/team/members/:id', e);
-    return res.status(500).json({ ok:false, message:'Server error' });
+    console.error('GET /api/team/invites', e);
+    res.status(500).json({ ok:false, message:'Server error' });
+  }
+});
+// DELETE /api/team/invites/:id  – ביטול הזמנה (owner/manager)
+app.delete('/api/team/invites/:id', authenticateUser, async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    if (!tenantId) return res.status(400).json({ ok:false, message:'Missing tenant context' });
+
+    const myRole = (req.user.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role;
+    if (!['owner','manager'].includes(myRole)) {
+      return res.status(403).json({ ok:false, message:'אין הרשאה לבטל הזמנה' });
+    }
+
+    const inv = await Invite.findById(req.params.id);
+    if (!inv) return res.status(404).json({ ok:false, message:'הזמנה לא נמצאה' });
+    if (String(inv.tenant) !== String(tenantId)) {
+      return res.status(403).json({ ok:false, message:'אין גישה להזמנה זו' });
+    }
+
+    await Invite.deleteOne({ _id: inv._id });
+    return res.json({ ok:true });
+  } catch (e) {
+    console.error('DELETE /api/team/invites/:id', e);
+    res.status(500).json({ ok:false, message:'Server error' });
+  }
+});
+// POST /api/team/invites/:id/resend – שולח שוב מייל הזמנה
+app.post('/api/team/invites/:id/resend', authenticateUser, async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    if (!tenantId) return res.status(400).json({ ok:false, message:'Missing tenant context' });
+
+    const myRole = (req.user.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role;
+    if (!['owner','manager'].includes(myRole)) {
+      return res.status(403).json({ ok:false, message:'אין הרשאה לשלוח מחדש' });
+    }
+
+    const inv = await Invite.findById(req.params.id).populate('tenant', 'name').lean();
+    if (!inv) return res.status(404).json({ ok:false, message:'הזמנה לא נמצאה' });
+    if (String(inv.tenant._id) !== String(tenantId)) {
+      return res.status(403).json({ ok:false, message:'אין גישה להזמנה זו' });
+    }
+    if (inv.expiresAt < new Date()) {
+      return res.status(400).json({ ok:false, message:'הזמנה פגה—צור חדשה' });
+    }
+
+    const baseUrl = process.env.BASE_URL || 'https://your-app-url';
+    const inviteUrl = `${baseUrl}/register.html?invite=${encodeURIComponent(inv.token)}`;
+    const subject = `תזכורת: הוזמנת להצטרף ל-${inv.tenant.name} במערכת New Deli`;
+    const text = `שלום,\n\nתזכורת להזמנה להצטרף ל-${inv.tenant.name}.\nלהשלמת ההרשמה:\n${inviteUrl}\n\nהלינק תקף עד ${new Date(inv.expiresAt).toLocaleString('he-IL')}.`;
+    const html = `
+      <div style="font-family:Heebo,Arial,sans-serif;line-height:1.6;color:#222">
+        <h2 style="margin:0 0 12px">תזכורת להצטרפות ל-${inv.tenant.name}</h2>
+        <p>להשלמת ההרשמה:</p>
+        <p><a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px">פתח הזמנה</a></p>
+        <p style="color:#555;font-size:14px">הזמנה תקפה עד ${new Date(inv.expiresAt).toLocaleString('he-IL')}.</p>
+      </div>
+    `;
+    try {
+      await mailer.sendMail({ from: `"New Deli" <${process.env.SMTP_USER}>`, to: inv.email, subject, text, html });
+    } catch (e) {
+      console.error('invite resend mail failed:', e.message);
+    }
+
+    return res.json({ ok:true });
+  } catch (e) {
+    console.error('POST /api/team/invites/:id/resend', e);
+    res.status(500).json({ ok:false, message:'Server error' });
   }
 });
 
+app.post("/auth/verify-email-code", async (req, res) => {
+  try {
+    const { email, code } = req.body || {};
+    const ce  = cleanEmail(email);
+    const rec = emailOtpStore[ce];
 
-// מחיקת עובד
+    if (!isEmail(ce))                return res.status(400).json({ ok:false, message:"אימייל לא תקין" });
+    if (!rec)                        return res.status(400).json({ ok:false, message:"לא נשלח קוד" });
+    if (rec.expires < Date.now()) { delete emailOtpStore[ce]; return res.status(400).json({ ok:false, message:"קוד פג תוקף" }); }
+    if (rec.code !== String(code))   return res.status(400).json({ ok:false, message:"קוד שגוי" });
+
+    // User
+    let user = await User.findOne({ email: ce });
+    if (!user) {
+      const base = (rec.name || ce.split("@")[0]).trim();
+      const uniqueUsername = `${base}-${Math.floor(Math.random()*10000)}`;
+      user = await User.create({
+        username: uniqueUsername,
+        email: ce,
+        name: rec.name,
+        role: "user",
+        TenantName: rec.tenantName,
+        memberships: []
+      });
+    }
+
+    // Always create NEW Tenant for owner flow
+    const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
+const slug = await uniqueTenantSlug(tenantName);
+    const tenant = await Tenant.create({
+      name: tenantName,
+      slug,
+      owner: user._id,
+      settings: { phone: rec.tenantPhone || "" }
+    });
+
+    // Update user ⇄ tenant (active)
+    user.TenantID  = tenant._id;
+    user.TenantName = tenantName;
+    user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
+    user.memberships.push({ tenant: tenant._id, role: 'owner' });
+    await user.save();
+
+    // cleanup OTP
+    delete emailOtpStore[ce];
+
+    // sign cookie
+    signAuthCookie(res, { userId: user._id, tenantId: tenant._id, role: "owner" });
+
+    return res.json({ ok:true, message:"מחובר!", redirect: roleHomeFor(user) });
+  } catch (err) {
+    console.error("verify-email-code error:", err);
+    res.status(500).json({ ok:false, message:"שגיאה באימות" });
+  }
+});
+
+// ===== AUTH: Employee login + forgot/reset =====
+app.post("/auth/employee/login", authLimiter, async (req, res) => {
+  try {
+    const { email, password } = req.body || {};
+    const ce = cleanEmail(email);
+    if (!isEmail(ce) || !password || String(password).length < 6) {
+      return res.status(400).json({ ok:false, message:"אימייל/סיסמה לא תקינים" });
+    }
+    const user = await User.findOne({ email: ce });
+    if (!user || !user.passwordHash) {
+      return res.status(400).json({ ok:false, message:"משתמש לא נמצא או שאין סיסמה" });
+    }
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ ok:false, message:"סיסמה שגויה" });
+
+    // choose active tenant
+    let tenantId = user.TenantID;
+    if (!tenantId) {
+      const owned = await Tenant.findOne({ owner: user._id }).select("_id");
+      if (owned) tenantId = owned._id;
+    }
+    if (!tenantId) return res.status(400).json({ ok:false, message:"לא משויך לעסק פעיל" });
+
+    // role
+    let role = "employee";
+    const isOwner = await Tenant.exists({ _id: tenantId, owner: user._id });
+    if (isOwner) role = "owner";
+
+    signAuthCookie(res, { userId: user._id, tenantId, role });
+    res.json({ ok:true, redirect:"/" });
+  } catch (e) {
+    console.error("employee/login error:", e);
+    res.status(500).json({ ok:false, message:"Server error" });
+  }
+});
+
+app.post("/auth/employee/forgot", authLimiter, async (req, res) => {
+  try {
+    const ce = cleanEmail(req.body?.email);
+    if (!isEmail(ce)) return res.status(400).json({ ok:false, message:"אימייל לא תקין" });
+
+    const user = await User.findOne({ email: ce }).select("_id email");
+    if (!user) return res.json({ ok:true, message:"אם המשתמש קיים – יישלח קישור איפוס." });
+
+    const token = require("crypto").randomBytes(24).toString("hex");
+    passwordResetStore[token] = { email: ce, expires: Date.now() + 15*60*1000 };
+    const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${token}`;
+    console.log(`[RESET] for ${ce}: ${resetUrl}`);
+
+    res.json({ ok:true, message:"שלחנו קישור איפוס אם המשתמש קיים." });
+  } catch (e) {
+    console.error("employee/forgot error:", e);
+    res.status(500).json({ ok:false, message:"Server error" });
+  }
+});
+
+app.post("/auth/employee/reset", authLimiter, async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+    if (!token || !password || String(password).length < 6) {
+      return res.status(400).json({ ok:false, message:"טוקן/סיסמה לא תקינים" });
+    }
+    const rec = passwordResetStore[token];
+    if (!rec || rec.expires < Date.now()) { delete passwordResetStore[token]; return res.status(400).json({ ok:false, message:"טוקן לא תקף" }); }
+    const user = await User.findOne({ email: rec.email });
+    if (!user) { delete passwordResetStore[token]; return res.status(400).json({ ok:false, message:"משתמש לא קיים" }); }
+    user.passwordHash = await bcrypt.hash(password, 10);
+    await user.save();
+    delete passwordResetStore[token];
+    res.json({ ok:true, message:"הסיסמה עודכנה. אפשר להתחבר." });
+  } catch (e) {
+    console.error("employee/reset error:", e);
+    res.status(500).json({ ok:false, message:"Server error" });
+  }
+});
+
+// ===== Admin tenants features =====
+app.put("/api/admin/tenants/:id/features",
+  authenticateUser, requirePlatformAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { key, value, ...bulk } = req.body || {};
+    const tenant = await Tenant.findById(id);
+    if (!tenant) return res.status(404).json({ ok:false, message:"עסק לא נמצא" });
+
+    if (!tenant.features) tenant.features = new Map();
+    if (!(tenant.features instanceof Map) && typeof tenant.features === 'object') {
+      tenant.features = new Map(Object.entries(tenant.features));
+    }
+
+    let changed = false;
+    if (typeof key === "string") { tenant.features.set(key, !!value); changed = true; }
+    else { for (const [k, v] of Object.entries(bulk)) { tenant.features.set(k, !!v); changed = true; } }
+    if (changed) tenant.markModified('features');
+    await tenant.save();
+
+    res.json({ ok:true, features: featuresToPlain(tenant.features) });
+  }
+);
+
+// ===== Team: create/add member =====
+app.post('/api/team/members', authenticateUser, requireTeamManager, async (req, res) => {
+  let { name, email, role = 'employee', sendInvite = true } = req.body || {};
+  email = String(email).trim().toLowerCase();
+
+  // ולידציה
+  if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ ok:false, message:'Invalid email' });
+  
+  const tenantId = req.user.TenantID;
+  const tenantName = req.user.TenantName;
+  const baseUrl = process.env.BASE_URL || 'https://your-app-url';
+  
+  let user = await User.findOne({ email });
+
+  // אם קיים
+  if (user) {
+    const alreadyMember = user.memberships?.some(m => String(m.tenant) === String(tenantId));
+    if (alreadyMember) return res.status(409).json({ ok:false, message:'User already belongs to this tenant' });
+    
+    user.memberships.push({ tenant: tenantId, role });
+    await user.save();
+  } else {
+    // יצירת משתמש חדש
+    user = await User.create({
+      name,
+      email,
+      role,
+      TenantID: tenantId,
+      TenantName: tenantName,
+      memberships: [{ tenant: tenantId, role }]
+    });
+
+    // שליחת הזמנה במייל
+    if (sendInvite) {
+      const subject = `קיבלת גישה ל-${tenantName}`;
+      const html = `<p>שלום ${name},</p>
+                    <p>הוזמנת להצטרף ל-${tenantName} במערכת.</p>
+                    <a href="${baseUrl}/register?email=${encodeURIComponent(email)}">כניסה להרשמה</a>`;
+      await mailer.sendMail({ to: email, subject, html });
+    }
+  }
+
+  return res.json({ ok: true, member: { id: user.id, name, email, role } });
+});
+
+// ===== Team: update =====
+app.put('/api/team/members/:id', authenticateUser, async (req, res) => {
+  const tenantId = req.user.TenantID;
+  const { id } = req.params;
+  const { name, role, status } = req.body || {};
+
+  const target = await User.findById(id);
+  if (!target) return res.status(404).json({ ok:false, message:'משתמש לא נמצא' });
+
+  const memIdx = (target.memberships || []).findIndex(m => String(m.tenant) === String(tenantId));
+  if (memIdx === -1) return res.status(404).json({ ok:false, message:'לא שייך לעסק שלך' });
+
+  if (name) target.name = name;
+  if (role) target.memberships[memIdx].role = role;
+  if (status) target.status = status;
+  await target.save();
+
+  res.json({ ok: true, message: 'עודכן בהצלחה' });
+});
+
+
+// ===== Team: delete (remove membership) =====
 app.delete('/api/users/:id', authenticateUser, async (req, res) => {
   try {
-    const tenantId = req.user.TenantID;
+    const tenantId   = req.user.TenantID;
     if (!tenantId) return res.status(400).json({ ok:false, message:'Missing tenant context' });
 
     const editorRole = getRoleForTenant(req.user, tenantId);
@@ -705,460 +856,48 @@ app.delete('/api/users/:id', authenticateUser, async (req, res) => {
     if (!target) return res.status(404).json({ ok:false, message:'משתמש לא נמצא' });
 
     const memIdx = (target.memberships || []).findIndex(m => String(m.tenant) === String(tenantId));
-    if (memIdx === -1) {
-      return res.status(404).json({ ok:false, message:'המשתמש אינו שייך לעסק זה' });
-    }
+    if (memIdx === -1) return res.status(404).json({ ok:false, message:'המשתמש אינו שייך לעסק זה' });
 
     const targetRole = target.memberships[memIdx].role;
-
-    // 🔒 אי אפשר למחוק בעלים
-    if (targetRole === 'owner') {
-      return res.status(403).json({ ok:false, message:'אסור למחוק את בעל העסק' });
-    }
-
-    // מנהל לא יכול למחוק מנהל
+    if (targetRole === 'owner') return res.status(403).json({ ok:false, message:'אסור למחוק בעל העסק' });
     if (editorRole === 'manager' && targetRole === 'manager') {
       return res.status(403).json({ ok:false, message:'מנהל לא יכול למחוק מנהל' });
     }
 
-    // אם יש למשתמש יותר מטננט אחד – נסיר רק את החברות לטננט הזה.
     target.memberships.splice(memIdx, 1);
-
-    // תאימות: אם אתה משתמש בשדות "שטוחים" TenantID/TenantName לתצוגה, ננקה אותם
-    // רק אם אחרי ההסרה אין לו יותר חברות (או תעדכן לטננט אחר אם יש).
-    if (!target.memberships.length) {
-      target.TenantID = undefined;
-      target.TenantName = undefined;
-    }
-
+    if (!target.memberships.length) { target.TenantID = undefined; target.TenantName = undefined; }
     await target.save();
-    return res.json({ ok:true });
+    res.json({ ok:true });
   } catch (e) {
     console.error('DELETE /api/users/:id', e);
-    return res.status(500).json({ ok:false, message:'Server error' });
+    res.status(500).json({ ok:false, message:'Server error' });
   }
 });
 
-
-
-
-
-// 🔹 שליחת קוד למייל - מעדכנים לשמור את tenantName
-app.post("/auth/request-email-code", async (req, res) => {
-  try {
-    const { name, email, tenantName, tenantPhone } = req.body || {};  // 🆕 קוראים tenantName
-const cleanName        = String(name || "").trim();
-const cleanEmail       = String(email || "").trim().toLowerCase();
-const cleanTenantName  = String(tenantName || "").trim();
-const cleanTenantPhone = String(tenantPhone || "").trim();
-
-    // ✅ בדיקת תקינות
-if (!cleanName || !isEmail(cleanEmail) || !cleanTenantName || !cleanTenantPhone) {
-  return res.status(400).json({
-    ok: false,
-    message: "יש למלא שם, אימייל, שם עסק ומספר טלפון"
-  });
-}
-
-    const code = genCode();
-    
-    // 🆕 שומרים גם את tenantName ב-store הזמני
-emailOtpStore[cleanEmail] = {
-  code,
-  name: cleanName,
-  tenantPhone: cleanTenantPhone,
-  tenantName: cleanTenantName,
-  expires: Date.now() + 5 * 60 * 1000
-};
-
-    await mailer.sendMail({
-      from: `"New Deli" <${process.env.SMTP_USER}>`,
-      to: cleanEmail,
-      subject: "קוד התחברות",
-      text: `שלום ${cleanName}, הקוד שלך הוא: ${code} (תקף ל-5 דקות).`
-    });
-
-    res.json({ ok: true, message: "נשלח קוד לאימייל" });
-  } catch (err) {
-    console.error("request-email-code error:", err);
-    res.status(500).json({ ok: false, message: "שגיאה בשליחת הקוד" });
-  }
-});
-const requireTenantFeature = (feature) => async (req, res, next) => {
-  try {
-    const t = await Tenant.findById(req.user.TenantID).select('features');
-    const on = featureOn(t?.features, feature);
-    if (!on) {
-      return res.status(403).json({ ok:false, message:'הפיצ׳ר לא פעיל לעסק זה' });
-    }
-    next();
-  } catch (e) {
-    console.error('requireTenantFeature error:', e);
-    return res.status(500).json({ ok:false, message:'Server error' });
-  }
-};
-// לקרוא לוגים של הטננט הנוכחי
+// ===== Logs =====
 app.get('/api/logs', authenticateUser, async (req, res) => {
   try {
-    const myRole = req.user.memberships?.find(m => String(m.tenant) === String(req.user.TenantID))?.role || 'employee';
-    // מי יכול לראות לוגים?
+    const myRole = getRoleForTenant(req.user, req.user.TenantID) || 'employee';
     if (!['owner','manager','shift_manager'].includes(myRole)) {
       return res.status(403).json({ ok:false, message:'אין הרשאה לצפייה ביומן' });
     }
-
     const limit = Math.min(parseInt(req.query.limit || 30, 10), 100);
     const since = req.query.since ? new Date(req.query.since) : null;
-
     const q = { tenant: req.user.TenantID };
     if (since) q.createdAt = { $gte: since };
 
     const logs = await ActivityLog.find(q).sort({ createdAt: -1 }).limit(limit).lean();
-
-    res.json({
-      ok: true,
-      logs: logs.map(l => ({
-        id: l._id,
-        action: l.action,
-        createdAt: l.createdAt,
-        actor: { id: l.actor, name: l.actorName, email: l.actorEmail },
-        target: l.target,
-        meta: l.meta
-      }))
-    });
+    res.json({ ok:true, logs: logs.map(l => ({
+      id:l._id, action:l.action, createdAt:l.createdAt,
+      actor:{ id:l.actor, name:l.actorName, email:l.actorEmail }, target:l.target, meta:l.meta
+    }))});
   } catch (e) {
     console.error('GET /api/logs error:', e);
     res.status(500).json({ ok:false, message:'שגיאה בטעינת הלוגים' });
   }
 });
 
-const slugify = require('slugify');
-
-
-// 🔹 אימות קוד - יצירת משתמש עם Tenant
-app.post("/auth/verify-email-code", async (req, res) => {
-  try {
-    const { email, code } = req.body || {};
-    const cleanEmail = String(email || "").trim().toLowerCase();
-    const rec = emailOtpStore[cleanEmail];
-
-    if (!isEmail(cleanEmail))
-      return res.status(400).json({ ok: false, message: "אימייל לא תקין" });
-
-    if (!rec)
-      return res.status(400).json({ ok: false, message: "לא נשלח קוד" });
-
-    if (rec.expires < Date.now()) {
-      delete emailOtpStore[cleanEmail];
-      return res.status(400).json({ ok: false, message: "קוד פג תוקף" });
-    }
-
-    if (rec.code !== String(code))
-      return res.status(400).json({ ok: false, message: "קוד שגוי" });
-
-    // ✅ בודקים אם המשתמש קיים
-    let user = await User.findOne({ email: cleanEmail });
-
-    if (!user) {
-      // 🔹 שלב 1: יוצרים User תחילה (ללא Tenant)
-const baseUsername = rec.name?.trim() || cleanEmail.split("@")[0];
-const uniqueUsername = `${baseUsername}-${Math.floor(Math.random() * 10000)}`;
-
-user = await User.create({
-  username: uniqueUsername,
-  email: cleanEmail,
-  name: rec.name,
-  role: "user",
-  TenantName: rec.tenantName,
-  memberships: []
-});
-
-      // 🔹 שלב 2: יוצרים Tenant עם ה-owner שיצרנו
-      const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
-      const slug = slugify(tenantName, { lower: true, strict: true });
-
-      const newTenant = await Tenant.create({
-        name: tenantName,
-        slug,
-        owner: user._id
-      });
-
-      // 🔹 שלב 3: מעדכנים את ה-User עם ה-Tenant
-      user.TenantID = newTenant._id;
-      user.memberships = [{ tenant: newTenant._id, role: 'owner' }];
-      await user.save();
-    } else {
-  // משתמש קיים - ייצור Tenant חדש נוסף
-  const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
-  const slug = slugify(tenantName, { lower: true, strict: true });
-
-  const newTenant = await Tenant.create({
-    name: tenantName,
-    slug,
-    owner: user._id
-  });
-
-  user.TenantID = newTenant._id;
-  user.TenantName = tenantName;
-  user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
-  user.memberships.push({ tenant: newTenant._id, role: 'owner' });
-  await user.save();
-}
-
-    // ✅ יוצרים JWT token כולל TenantID
-    const payload = { id: user._id.toString(), TenantID: user.TenantID?.toString() };
-    const token = jwt.sign(payload, SECRET, { expiresIn: "7d" });
-
-    res.cookie("token", token, {
-      sameSite: "none",
-      secure: true,
-      httpOnly: true,
-      path: "/",
-      maxAge: 1000 * 60 * 60 * 24 * 7
-    });
-
-    delete emailOtpStore[cleanEmail];
-
-    res.json({
-      ok: true,
-      message: "מחובר!",
-      redirect: "/",
-      user: {
-        id: user._id,
-        username: user.username || rec.name || cleanEmail.split("@")[0],
-        email: user.email,
-        role: user.role,
-        tenantName: user.TenantName,
-        tenantId: user.TenantID
-      }
-    });
-  } catch (err) {
-    console.error("verify-email-code error:", err);
-    res.status(500).json({ ok: false, message: "שגיאה באימות" });
-  }
-});
-
-// העלאת חשבונית
-app.post('/api/invoices/upload',
-  authenticateUser,
-  requireTenantFeature('invoices'),
-  upload.single('file'),
-  async (req, res) => {
-    try {
-      const tenantId = req.user.TenantID;
-      if (!tenantId) return res.status(400).json({ ok:false, message:'חסרה זיקה לעסק' });
-      if (!req.file) return res.status(400).json({ ok:false, message:'לא נבחר קובץ' });
-
-      const description = String(req.body?.description || '').trim();
-      if (!description) return res.status(400).json({ ok:false, message:'יש להזין תיאור' });
-
-      // העלאה ל-Cloudinary
-      const streamUpload = (buffer) => new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: CLOUD_FOLDER, resource_type: 'auto' },
-          (err, result) => err ? reject(err) : resolve(result)
-        );
-        stream.end(buffer);
-      });
-      const up = await streamUpload(req.file.buffer);
-
-      // מספר חשבונית רץ לטננט
-      const number = await nextInvoiceNumber(tenantId);
-
-      // שמירה ל-DB
-      const inv = await Invoice.create({
-        tenant: tenantId,
-        number,                     // ✅ חשוב!
-        uploadedBy: req.user._id,
-        description,
-        uploadedByN: req.user.name,
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-        file: {
-          public_id: up.public_id,
-          url: up.secure_url || up.url,
-          format: up.format,
-          resource_type: up.resource_type,
-          bytes: up.bytes, width: up.width, height: up.height,
-          original_filename: up.original_filename
-        }
-      });
-
-      await log(req, 'העלאת חשבונית',
-        { kind: 'Invoice', id: String(inv._id), label: inv.description },
-        { description }
-      );
-
-      res.json({ ok:true,
-        id: inv._id, url: inv.file?.url, originalname: inv.originalname,
-        username: inv.uploadedByN,
-        mimetype: inv.mimetype, size: inv.size, description: inv.description,
-        uploadedAt: inv.createdAt
-      });
-    } catch (e) {
-      console.error('upload invoice error:', e);
-      res.status(500).json({ ok:false, message: e.message || 'שגיאה בהעלאה' });
-    }
-  }
-);
-// מחיקת חשבונית
-app.delete('/api/invoices/:id',
-  authenticateUser,
-  requireTenantFeature('invoices'),
-  async (req, res) => {
-    console.log('DELETE /api/invoices', req.params.id);
-    try {
-      const tenantId = req.user.TenantID;
-      const { id }   = req.params;
-
-      const inv = await Invoice.findById(id);
-      if (!inv) return res.status(404).json({ ok:false, message:'חשבונית לא נמצאה' });
-      if (String(inv.tenant) !== String(tenantId)) {
-        return res.status(403).json({ ok:false, message:'אין לך גישה לחשבונית זו' });
-      }
-
-      // הרשאות מחיקה: בעלים/מנהל/אחמ״ש, או המעלה עצמו
-      const myRole = getRoleForTenant(req.user, tenantId);
-      const isUploader = String(inv.uploadedBy) === String(req.user._id);
-      if (!['owner','manager','shift_manager'].includes(myRole) && !isUploader) {
-        return res.status(403).json({ ok:false, message:'אין לך הרשאה למחוק חשבונית זו' });
-      }
-
-      // מחיקה מקלאודינרי (אם יש)
-      try {
-        if (inv.file?.public_id) {
-          const rtype = inv.file?.resource_type || (String(inv.mimetype||'').includes('pdf') ? 'raw' : 'image');
-          await cloudinary.uploader.destroy(inv.file.public_id, { resource_type: rtype });
-        }
-      } catch (e) {
-        console.warn('cloudinary destroy failed:', e.message);
-      }
-
-      // לוג מחיקה
-      await log(req, 'invoice:delete',
-        { kind: 'Invoice', id: String(inv._id), label: inv.description || inv.originalname, url: inv.file?.url },
-        { size: inv.size, mimetype: inv.mimetype }
-      );
-
-      await Invoice.deleteOne({ _id: inv._id });
-
-      res.json({ ok:true });
-    } catch (e) {
-      console.error('delete invoice error:', e);
-      res.status(500).json({ ok:false, message:'שגיאה במחיקה' });
-    }
-  }
-);
-
-// חיפוש חשבוניות לפי תיאור
-app.get('/api/invoices/search',
-  authenticateUser,
-  requireTenantFeature('invoices'),
-  async (req, res) => {
-    try {
-      const tenantId = req.user.TenantID;
-      const q = String(req.query.q || '').trim();
-      const cond = { tenant: tenantId };
-      if (q) cond.description = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
-
-      const items = await Invoice.find(cond)
-        .sort({ createdAt: -1 })
-        .limit(100)
-        .lean();
-
-      res.json({ ok: true, items });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ ok: false, message: 'שגיאה בחיפוש' });
-    }
-  }
-);
-
-// רשימת חשבוניות אחרונות
-app.get('/api/invoices/list',
-  authenticateUser,
-  requireTenantFeature('invoices'),
-  async (req, res) => {
-    try {
-      const tenantId = req.user.TenantID;
-      const items = await Invoice.find({ tenant: tenantId })
-        .sort({ createdAt: -1 })
-        .limit(100)
-        .lean();
-
-      res.json({ ok: true, items });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ ok: false, message: 'שגיאה בטעינה' });
-    }
-  }
-);
-
-// הרשמה ידנית (ללא סיסמה)
-
-// מי מחובר? (ע"פ cookie JWT)
-app.get("/me", authenticateUser, (req,res) => {
-  const user = req.user;
-  res.json({
-    ok: true,
-    user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      platformRole: user.platformRole || "user"
-    },
-    isPlatformAdmin: isPlatformAdmin(user)
-  });
-});
-console.log("[ADMIN EMAILS]", process.env.PLATFORM_ADMIN_EMAILS);
-// תאימות לאחור אם יש קוד פרונט שמחפש cookie בשם "user"
-app.get("/user", (req, res) => {
-  if (req.cookies && req.cookies.user) {
-    try {
-      const user = JSON.parse(req.cookies.user);
-      return res.json({ ok: true, user });
-    } catch {
-      return res.json({ ok: false });
-    }
-  }
-  res.json({ ok: false });
-});
-
-// server.js (או קובץ הראוטים שלך)
-app.put("/api/user/update", authenticateUser, async (req, res) => {
-  try {
-    const { name } = req.body || {};
-    const cleanName = String(name || "").trim();
-
-    if (!cleanName) {
-      return res.status(400).json({ ok: false, message: "יש להזין שם מלא" });
-    }
-    if (cleanName.length > 80) {
-      return res.status(400).json({ ok: false, message: "שם ארוך מדי" });
-    }
-
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).json({ ok: false, message: "משתמש לא נמצא" });
-    }
-
-    user.name = cleanName;
-    await user.save();
-
-    return res.json({
-      ok: true,
-      message: "הפרופיל עודכן בהצלחה",
-      user: { id: user._id, name: user.name, email: user.email }
-    });
-  } catch (err) {
-    console.error("user/update error:", err);
-    return res.status(500).json({ ok: false, message: "שגיאה בעדכון הפרופיל" });
-  }
-});
-
-// Middleware לבדיקת authentication
-
-// helper: הופך Map/אובייקט של features לפשוט
+// ===== Tenant info =====
 function plainFeatures(f) {
   if (!f) return {};
   if (f instanceof Map) return Object.fromEntries(f);
@@ -1166,25 +905,17 @@ function plainFeatures(f) {
   return {};
 }
 
-// ⚠️ אותו handler לשני מסלולים – עם/בלי /api
 app.get('/api/tenant/info', authenticateUser, async (req, res) => {
   try {
     const user   = req.user;
     const tenant = await Tenant.findById(user.TenantID).lean();
+    if (!tenant) return res.status(404).json({ ok:false, message:'עסק לא נמצא' });
 
-    if (!tenant) {
-      return res.status(404).json({ ok:false, message:'עסק לא נמצא' });
-    }
-
-    // featureState כ־booleans לפי הקטלוג שלך (אם יש)
     const featureState = Object.fromEntries(
       Object.keys(FEATURE_CATALOG || {}).map(k => [k, !!(tenant.features && tenant.features.get && tenant.features.get(k))])
     );
 
-    const teamMembers = await User.find({ TenantID: tenant._id })
-      .select('name email role memberships')
-      .lean();
-
+    const teamMembers = await User.find({ TenantID: tenant._id }).select('name email role memberships').lean();
     const owner = teamMembers.find(m =>
       m.memberships?.some(mem => String(mem.tenant) === String(tenant._id) && mem.role === 'owner')
     ) || null;
@@ -1192,24 +923,17 @@ app.get('/api/tenant/info', authenticateUser, async (req, res) => {
     res.json({
       ok: true,
       tenant: {
-        id:        tenant._id,
-        name:      tenant.name,
-        createdAt: tenant.createdAt,
-        settings:  tenant.settings,
-        features:  plainFeatures(tenant.features), // ← Map → Object
+        id: tenant._id, name: tenant.name, createdAt: tenant.createdAt,
+        settings: tenant.settings, features: plainFeatures(tenant.features)
       },
       featureState,
       currentUser: {
-        id:   user._id,
-        name: user.name,
-        email:user.email,
+        id: user._id, name: user.name, email: user.email,
         role: user.memberships?.find(m => String(m.tenant) === String(tenant._id))?.role || 'staff'
       },
       owner: owner ? { name: owner.name, email: owner.email } : null,
       teamMembers: teamMembers.map(m => ({
-        id:   m._id,
-        name: m.name,
-        email:m.email,
+        id: m._id, name: m.name, email: m.email,
         role: m.memberships?.find(mm => String(mm.tenant) === String(tenant._id))?.role || 'staff'
       }))
     });
@@ -1219,119 +943,202 @@ app.get('/api/tenant/info', authenticateUser, async (req, res) => {
   }
 });
 
-// רשימת חשבוניות (גם כאן – עם/בלי /api)
+// ===== Invoices =====
+app.post('/api/invoices/upload',
+  authenticateUser, requireTenantFeature('invoices'), upload.single('file'),
+  async (req, res) => {
+    try {
+      const tenantId   = req.user.TenantID;
+      if (!tenantId) return res.status(400).json({ ok:false, message:'חסרה זיקה לעסק' });
+      if (!req.file)  return res.status(400).json({ ok:false, message:'לא נבחר קובץ' });
+      const description = clean(req.body?.description);
+      if (!description) return res.status(400).json({ ok:false, message:'יש להזין תיאור' });
+
+      const streamUpload = (buffer) => new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: CLOUD_FOLDER, resource_type: 'auto' },
+          (err, result) => err ? reject(err) : resolve(result)
+        );
+        stream.end(buffer);
+      });
+      const up = await streamUpload(req.file.buffer);
+      const number = await nextInvoiceNumber(tenantId);
+
+      const inv = await Invoice.create({
+        tenant: tenantId, number,
+        uploadedBy: req.user._id, uploadedByN: req.user.name,
+        description,
+        originalname: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size,
+        file: {
+          public_id: up.public_id, url: up.secure_url || up.url, format: up.format,
+          resource_type: up.resource_type, bytes: up.bytes, width: up.width, height: up.height,
+          original_filename: up.original_filename
+        }
+      });
+
+      await log(req, 'invoice:upload', { kind:'Invoice', id:String(inv._id), label:inv.description }, { description });
+
+      res.json({ ok:true,
+        id: inv._id, url: inv.file?.url, originalname: inv.originalname,
+        username: inv.uploadedByN, mimetype: inv.mimetype, size: inv.size,
+        description: inv.description, uploadedAt: inv.createdAt
+      });
+    } catch (e) {
+      console.error('upload invoice error:', e);
+      res.status(500).json({ ok:false, message: e.message || 'שגיאה בהעלאה' });
+    }
+  }
+);
+
+app.delete('/api/invoices/:id', authenticateUser, requireTenantFeature('invoices'), async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    const { id }   = req.params;
+    const inv = await Invoice.findById(id);
+    if (!inv) return res.status(404).json({ ok:false, message:'חשבונית לא נמצאה' });
+    if (String(inv.tenant) !== String(tenantId)) return res.status(403).json({ ok:false, message:'אין לך גישה לחשבונית זו' });
+
+    const myRole = getRoleForTenant(req.user, tenantId);
+    const isUploader = String(inv.uploadedBy) === String(req.user._id);
+    if (!['owner','manager','shift_manager'].includes(myRole) && !isUploader) {
+      return res.status(403).json({ ok:false, message:'אין לך הרשאה למחוק חשבונית זו' });
+    }
+
+    try {
+      if (inv.file?.public_id) {
+        const rtype = inv.file?.resource_type || (String(inv.mimetype||'').includes('pdf') ? 'raw' : 'image');
+        await cloudinary.uploader.destroy(inv.file.public_id, { resource_type: rtype });
+      }
+    } catch (e) { console.warn('cloudinary destroy failed:', e.message); }
+
+    await log(req, 'invoice:delete',
+      { kind:'Invoice', id:String(inv._id), label: inv.description || inv.originalname, url: inv.file?.url },
+      { size: inv.size, mimetype: inv.mimetype }
+    );
+
+    await Invoice.deleteOne({ _id: inv._id });
+    res.json({ ok:true });
+  } catch (e) {
+    console.error('delete invoice error:', e);
+    res.status(500).json({ ok:false, message:'שגיאה במחיקה' });
+  }
+});
+
+app.get('/api/invoices/search', authenticateUser, requireTenantFeature('invoices'), async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    const q = clean(req.query.q || '');
+    const cond = { tenant: tenantId };
+    if (q) cond.description = { $regex: q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' };
+    const items = await Invoice.find(cond).sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ ok:true, items });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok:false, message: 'שגיאה בחיפוש' });
+  }
+});
+
 app.get('/api/invoices/list', authenticateUser, async (req, res) => {
   try {
     const tenantId = req.user.TenantID;
     const items = await Invoice.find({ tenant: tenantId })
-      .sort({ createdAt: -1 })
-      .select('number description uploadedByN createdAt file.url')
-      .lean();
-
-    res.json({
-      ok: true,
-      invoices: items.map(x => ({
-        id:          String(x._id),
-        number:      x.number ?? null,
-        description: x.description || '',
-        uploader:    x.uploadedByN || '',
-        at:          x.createdAt,
-        url:         x.file?.url || null
-      }))
-    });
+      .sort({ createdAt: -1 }).select('number description uploadedByN createdAt file.url').lean();
+    res.json({ ok:true, invoices: items.map(x => ({
+      id:String(x._id), number:x.number ?? null, description:x.description || '',
+      uploader:x.uploadedByN || '', at:x.createdAt, url:x.file?.url || null
+    }))});
   } catch (e) {
     console.error('invoices/list error:', e);
     res.status(500).json({ ok:false, message:'שגיאה בטעינת חשבוניות' });
   }
 });
 
-
-// Route לעדכון פרטי עסק (רק לבעלים/מנהלים)
-app.put("/api/tenant/update", authenticateUser, async (req, res) => {
+// ===== Who am I =====
+app.get("/me", authenticateUser, async (req, res) => {
   try {
-    const user = req.user;
-    const { name, settings } = req.body;
-
-    // בדיקה שהמשתמש הוא owner או admin
-    const membership = user.memberships?.find(m => 
-      m.tenant.toString() === user.TenantID.toString()
-    );
-
-    if (!membership || !['owner', 'admin'].includes(membership.role)) {
-      return res.status(403).json({ 
-        ok: false, 
-        message: "אין הרשאה לעדכן פרטי העסק" 
-      });
+    const u = await User.findById(req.auth.id).select("_id email name TenantID platformRole memberships").lean();
+    let tenant = null, role = req.auth.role || "employee";
+    if (req.auth.TenantID) {
+      tenant = await Tenant.findById(req.auth.TenantID).select("_id name owner").lean();
+      if (tenant && String(tenant.owner) === String(u._id)) role = "owner";
     }
-
-    const tenant = await Tenant.findById(user.TenantID);
-    if (!tenant) {
-      return res.status(404).json({ 
-        ok: false, 
-        message: "עסק לא נמצא" 
-      });
-    }
-
-    // עדכון פרטים
-    if (name) tenant.name = name.trim();
-    if (settings) {
-      tenant.settings = { ...tenant.settings, ...settings };
-    }
-
-    await tenant.save();
-
-    res.json({ 
-      ok: true, 
-      message: "העסק עודכן בהצלחה",
-      tenant: {
-        id: tenant._id,
-        name: tenant.name,
-        settings: tenant.settings
-      }
-    });
-  } catch (err) {
-    console.error("tenant/update error:", err);
-    res.status(500).json({ 
-      ok: false, 
-      message: "שגיאה בעדכון העסק" 
-    });
+    res.json({ ok:true, user:u, currentTenant: tenant, role, isPlatformAdmin: isPlatformAdmin(u) });
+  } catch (e) {
+    console.error("/me error:", e);
+    res.status(500).json({ ok:false, message:"Server error" });
   }
 });
 
-
-// Logout (מנקה קוקים)
-app.post("/logout", (req, res) => {
-res.clearCookie("token", {
-  sameSite: "none",
-  secure: true,
-  httpOnly: true,
-  path: "/"
+// ===== Update user name =====
+app.put("/api/user/update", authenticateUser, async (req, res) => {
+  try {
+    const cleanName = clean(req.body?.name);
+    if (!cleanName) return res.status(400).json({ ok:false, message:"יש להזין שם מלא" });
+    if (cleanName.length > 80) return res.status(400).json({ ok:false, message:"שם ארוך מדי" });
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ ok:false, message:"משתמש לא נמצא" });
+    user.name = cleanName; await user.save();
+    res.json({ ok:true, message:"הפרופיל עודכן בהצלחה", user:{ id:user._id, name:user.name, email:user.email }});
+  } catch (err) {
+    console.error("user/update error:", err);
+    res.status(500).json({ ok:false, message:"שגיאה בעדכון הפרופיל" });
+  }
 });
-  res.clearCookie("user", { sameSite: "lax" });
-  res.json({ ok: true, message: "התנתקת בהצלחה" });
+
+// ===== Admin tenants list =====
+app.get("/api/admin/tenants", authenticateUser, requirePlatformAdmin, async (req, res) => {
+  const tenants = await Tenant.find({}).select("name createdAt owner settings features")
+    .populate({ path:"owner", select:"name email" }).lean();
+  res.json({ ok:true, tenants: tenants.map(t => ({
+    id:String(t._id), name:t.name, createdAt:t.createdAt,
+    owner: t.owner ? { name:t.owner.name, email:t.owner.email } : null,
+    settings:t.settings || {}, features: t.features || {}
+  }))});
+});
+
+// ===== Tenant update (owner/manager) =====
+app.put("/api/tenant/update", authenticateUser, async (req, res) => {
+  try {
+    const user = req.user;
+    const { name, settings } = req.body || {};
+    const membership = user.memberships?.find(m => String(m.tenant) === String(user.TenantID));
+    if (!membership || !['owner','admin'].includes(membership.role)) {
+      return res.status(403).json({ ok:false, message:"אין הרשאה לעדכן פרטי העסק" });
+    }
+    const tenant = await Tenant.findById(user.TenantID);
+    if (!tenant) return res.status(404).json({ ok:false, message:"עסק לא נמצא" });
+    if (name) tenant.name = clean(name);
+    if (settings) tenant.settings = { ...tenant.settings, ...settings };
+    await tenant.save();
+    res.json({ ok:true, message:"העסק עודכן בהצלחה", tenant:{ id:tenant._id, name:tenant.name, settings:tenant.settings }});
+  } catch (err) {
+    console.error("tenant/update error:", err);
+    res.status(500).json({ ok:false, message:"שגיאה בעדכון העסק" });
+  }
+});
+
+// ===== Logout =====
+app.post("/logout", (req, res) => {
+  res.clearCookie("token", { sameSite:"none", secure:true, httpOnly:true, path:"/" });
+  res.clearCookie("user",  { sameSite:"lax" });
+  res.json({ ok:true, message:"התנתקת בהצלחה" });
 });
 app.get("/logout", (req, res) => {
-  const isProd = process.env.NODE_ENV === 'production';
-  // חשוב: אותן אפשרויות כמו בזמן ה-set כדי שיימחק בטוח
-res.clearCookie("token", {
-  sameSite: "none",
-  secure: true,
-  httpOnly: true,
-  path: "/"
-});
-  res.clearCookie("user",  { sameSite: "lax" });
+  res.clearCookie("token", { sameSite:"none", secure:true, httpOnly:true, path:"/" });
+  res.clearCookie("user",  { sameSite:"lax" });
   return res.redirect("/login");
 });
-// ===== Error handler =====
+
+// ===== Errors =====
 app.use((err, req, res, next) => {
   console.error("🔥 Express Error:", err);
-  res.status(500).json({ ok: false, message: "Server error", error: err.message });
+  res.status(500).json({ ok:false, message:"Server error", error: err.message });
 });
 
 // ===== Start / Export (Vercel) =====
-const vercel = false;
+const vercel = true; // אם מריצים על Vercel כ-Serverless function, שנה ל-true וייצא את app
 if (vercel) {
   module.exports = app;
 } else {
-  app.listen(PORT, () => console.log(`🚀 Auth server listening on :${PORT}`));
+  app.listen(PORT, () => console.log(`🚀 Server listening on :${PORT}`));
 }

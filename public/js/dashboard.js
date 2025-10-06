@@ -371,42 +371,45 @@ wrap.onclick = (e) => {
     m.classList.add('hidden');
     document.body.classList.remove('modal-open');
   }
-  async function createMember(){
-    const btn = document.getElementById('am_submit');
-    const name = (document.getElementById('am_name')?.value || '').trim();
-    const email = (document.getElementById('am_email')?.value || '').trim();
-    const password = (document.getElementById('am_password')?.value || '').trim();
-    const role = (document.getElementById('am_role')?.value || 'employee');
-    const sendInvite = !!document.getElementById('am_sendInvite')?.checked;
-    if (!name)      { showToast?.('נא להזין שם', 'warning'); return; }
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) { showToast?.('אימייל לא תקין', 'warning'); return; }
-    if (!password || password.length < 8) { showToast?.('הסיסמה קצרה מדי (מינ׳ 8)', 'warning'); return; }
-    btn.disabled = true;
-    try {
-      const csrf = await getCsrfToken();
-      showToast?.('יוצר משתמש... זה עשוי לקחת כמה שניות', 'info');
-      const res = await fetch('/api/team/members', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
-        body: JSON.stringify({ name, email, password, role, sendInvite })
-      });
-      const data = await res.json().catch(()=> ({}));
-      if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
-      const newMember = {
-        id: data?.member?.id || data?.member?._id || null,
-        name, email, role, status: 'active'
-      };
-      if (Array.isArray(tenantData?.team)) tenantData.team.push(newMember);
-      renderTeamList(tenantData?.team || []);
-      closeAddMemberModal();
-      showToast?.('המשתמש נוצר בהצלחה', 'success');
-    } catch (e){
-      showToast?.(e?.message || 'שגיאה ביצירת משתמש', 'error');
-    } finally {
-      btn.disabled = false;
-    }
+async function createMember(){
+  const btn = document.getElementById('am_submit');
+  const email = (document.getElementById('am_email')?.value || '').trim();
+  const role  = (document.getElementById('am_role')?.value || 'employee');
+  const sendInvite = !!document.getElementById('am_sendInvite')?.checked;
+
+  if (!email || !/^\S+@\S+\.\S+$/.test(email)) { showToast?.('אימייל לא תקין', 'warning'); return; }
+
+  btn.disabled = true;
+  try {
+    const csrf = await getCsrfToken();
+    showToast?.('שולח הזמנה...', 'info');
+    const res = await fetch('/api/team/invite', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
+      body: JSON.stringify({ email, role, sendInvite })
+    });
+    const data = await res.json().catch(()=> ({}));
+    if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
+
+    closeAddMemberModal();
+    showToast?.('ההזמנה נשלחה', 'success');
+    // ריענון רשימת הצוות
+(async function initTeam(){
+  try {
+    await loadTenant?.();
+    await loadInvites?.();  // חדש
+  } catch(e) {
+    console.error(e);
   }
+})();
+  } catch (e){
+    showToast?.(e?.message || 'שגיאה בשליחת ההזמנה', 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
   document.getElementById('btnAddMember')?.addEventListener('click', openAddMemberModal);
   document.querySelector('#addMemberModal .modal-close')?.addEventListener('click', closeAddMemberModal);
   document.querySelector('#addMemberModal .modal-cancel')?.addEventListener('click', (e)=>{ e.preventDefault(); closeAddMemberModal(); });
@@ -973,6 +976,93 @@ document.getElementById('invoicesList')?.addEventListener('click', async (e) => 
   }
 });
 
+
+async function fetchJSON(url, opts={}) {
+  const csrf = await getCsrfToken?.();
+  const res = await fetch(url, {
+    method: opts.method || 'GET',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json', ...(csrf ? {'x-csrf-token': csrf} : {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  const data = await res.json().catch(()=> ({}));
+  if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
+  return data;
+}
+
+function fmt(d) {
+  try { return new Date(d).toLocaleString('he-IL'); } catch { return ''; }
+}
+
+async function loadInvites() {
+  try {
+    const card = document.getElementById('pendingInvitesCard');
+    if (!card) return;
+
+    const data = await fetchJSON('/api/team/invites');
+    const list = data?.invites || [];
+    const tbody = document.getElementById('invitesTbody');
+    const empty = document.getElementById('invitesEmpty');
+
+    tbody.innerHTML = '';
+    if (!list.length) {
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.forEach(inv => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td dir="ltr">${inv.email}</td>
+        <td>${roleLabel(inv.role)}</td>
+        <td>${fmt(inv.createdAt)}</td>
+        <td>${fmt(inv.expiresAt)}</td>
+        <td>
+          <div class="btn-row">
+            <button class="btn btn-secondary" data-action="resend" data-id="${inv.id}">שלח שוב</button>
+            <button class="btn btn-danger" data-action="cancel" data-id="${inv.id}">בטל</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('button[data-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.getAttribute('data-id');
+        const action = btn.getAttribute('data-action');
+        try {
+          btn.disabled = true;
+          if (action === 'cancel') {
+            await fetchJSON(`/api/team/invites/${id}`, { method: 'DELETE' });
+            showToast?.('הזמנה בוטלה', 'success');
+          } else if (action === 'resend') {
+            await fetchJSON(`/api/team/invites/${id}/resend`, { method: 'POST' });
+            showToast?.('נשלחה תזכורת', 'success');
+          }
+          await loadInvites();
+        } catch (e) {
+          showToast?.(e?.message || 'שגיאה בפעולה', 'error');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
+  } catch (e) {
+    console.error('loadInvites', e);
+    showToast?.(e?.message || 'שגיאה בטעינת הזמנות', 'error');
+  }
+}
+
+function roleLabel(r){
+  switch(String(r||'').toLowerCase()){
+    case 'manager': return 'מנהל';
+    case 'shift_manager': return 'אחמ״ש';
+    default: return 'עובד';
+  }
+}
 })();
 
 
