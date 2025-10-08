@@ -676,8 +676,7 @@ body {
 
 /* Header Filters */
 .header-filters {
-  display: flex;
-  gap: var(--space-sm);
+
 }
 
 /* Reports Grid */
@@ -901,7 +900,7 @@ body {
 #section-invoices .card { text-align: initial !important; }
 
 /* סרגל חיפוש/העלאה – 100% רוחב, בלי min-widthים דביקים */
-#section-invoices .header-filters { display:flex; flex-wrap: wrap; gap:12px; width:100%; }
+/* #section-invoices .header-filters { display:flex; flex-wrap: wrap; gap:12px; width:100%; } */
 #section-invoices .search-box { width:100%; }
 #section-invoices .search-box input {
   width:100% !important; min-width:0 !important;
@@ -983,7 +982,7 @@ body {
 
 /* מובייל/טאבלט – שמירה על פריסה נקייה וצמודה לימין */
 @media (max-width: 1024px) {
-  #section-invoices .invoice-card{ line-height:1.35; }
+  #section-invoices .invoice-card{ line-height:0.9; }
   #section-invoices .invoice-card .meta{
     display:grid; row-gap:2px;
   }
@@ -1005,4 +1004,44 @@ body {
     inset-inline-start: -24px;           /* RTL: להזיז לכיוון הימני */
     position: relative;
   }
+}
+
+/* עיצוב כללי לשדה בחירת חודש */
+#exportMonth {
+  background: var(--card, #141c2f);
+  color: var(--primary);
+  border: 1px solid var(--border, #334155);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: Heebo, system-ui, sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  direction: ltr; /* כדי שהתאריך יופיע נכון */
+  min-width: 140px;
+}
+
+/* אפקט ריחוף */
+#exportMonth:hover {
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 6px rgba(59,130,246,0.4);
+}
+
+/* במצב פוקוס */
+#exportMonth:focus {
+  border-color: var(--primary, #3b82f6);
+  background: rgba(59,130,246,0.1);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
+}
+
+/* מצב כהה/בהיר */
+[data-theme="light"] #exportMonth {
+  background: #fff;
+  color: #111;
+  border-color: #ccc;
+}
+[data-theme="light"] #exportMonth:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 6px rgba(59,130,246,0.2);
 }

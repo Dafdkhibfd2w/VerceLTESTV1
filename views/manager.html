@@ -204,13 +204,21 @@
   <div class="page-display">
   <div class="card">
     <div class="card-header">
-      <div class="header-filters">
-        <button class="btn btn-primary btn-sm" id="btnUploadInvoice">
-          <i class="fas fa-upload"></i>
-          העלה חשבונית
-        </button>
-        <input type="file" id="invoiceFileInput" accept=".pdf,image/*" hidden>
-      </div>
+
+<div class="header-filters" style="display: flex; gap: 12px;">
+  <button class="btn btn-primary btn-sm" id="btnUploadInvoicee">
+    <i class="fas fa-upload"></i>
+    העלה חשבונית
+  </button>
+  <input type="file" id="invoiceFileInput" accept=".pdf,image/*" hidden>
+
+  <input type="month" id="exportMonth" class="input-sm" style="margin-inline:8px;">
+  <button class="btn btn-outline btn-sm" id="btnExportInvoices">
+    <i class="fas fa-file-export"></i> ייצא לאקסל
+  </button>
+  
+</div>
+
     </div>
     <div class="card-body">
       <div class="empty-state" id="invoicesEmpty">

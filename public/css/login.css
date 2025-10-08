@@ -14,7 +14,11 @@
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+
+box-shadow: -2px 2px 18px 5px rgba(0,0,0,0.52);
+-webkit-box-shadow: -2px 2px 18px 5px rgba(0,0,0,0.52);
+-moz-box-shadow: -2px 2px 18px 5px rgba(0,0,0,0.52);
+  transition: 0.3s;
   padding: var(--space-xl);
   display: grid;
   grid-template-columns: 360px 1fr;

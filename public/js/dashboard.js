@@ -759,7 +759,7 @@ async function initInvoicesUI() {
   ensureUploadInvoiceModal();
 
   // כפתור "העלה חשבונית" פותח מודאל
-  document.getElementById('btnUploadInvoice')?.addEventListener('click', (e) => {
+  document.getElementById('btnUploadInvoicee')?.addEventListener('click', (e) => {
     e.preventDefault();
     openUploadInvoiceModal();
   });
@@ -775,8 +775,6 @@ async function initInvoicesUI() {
     const onSearch = debounce((v)=>loadInvoices(v),250);
     box.querySelector('input').addEventListener('input',(e)=>onSearch(e.target.value));
   }
-
-  // טעינה ראשונית
   try { await loadInvoices(''); } catch(e){ console.error(e); }
 }
 
@@ -920,7 +918,7 @@ function invoiceCardTemplate(it){
   const isPdf = (it.mimetype||'').includes('pdf') || /\.pdf$/i.test(it.originalname||'');
   const url   = it.file?.url || it.url;
   const desc  = it.description || '';
-  const uploader = it.username || it.uploadedByN || it.uploadedBy?.name || it.uploadedBy?.email || 'לא ידוע';
+  const uploader = it.username || it.uploadedByN || it.uploadedBy?.name || it.uploadedBy?.email || it.uploader || 'לא ידוע';
   const size  = it.size || it.file?.bytes || 0;
   const at    = it.createdAt || it.uploadedAt || new Date().toISOString();
 
@@ -930,9 +928,9 @@ function invoiceCardTemplate(it){
   <div class="invoice-card" data-id="${id}">
     <a class="link" href="${url?url:'#'}" ${url?'target="_blank" rel="noopener"':''}>
       <div class="meta">
-        <div class="name" data-label='תיאור'><bdi>${escapeHtml(desc || 'חשבונית')}</bdi></div><br>
-        <div class="sub" data-label='הועלה'><bdi>${escapeHtml(uploader)}</bdi></div><br>
-        <div class="sub" data-label='תאריך'><bdi>${new Date(at).toLocaleString('he-IL')}</div>
+        <div class="name" data-label='תיאור:'><bdi>${escapeHtml(desc || 'חשבונית')}</bdi></div><br>
+        <div class="sub" data-label='הועלה:'><bdi>${escapeHtml(uploader)}</bdi></div><br>
+        <div class="sub" data-label='תאריך:'><bdi>${new Date(at).toLocaleString('he-IL')}</div>
 
       </div>
     </a>
@@ -1064,6 +1062,30 @@ function roleLabel(r){
     default: return 'עובד';
   }
 }
+
+document.getElementById("btnExportInvoices")?.addEventListener("click", async () => {
+  const month = document.getElementById("exportMonth")?.value;
+  if (!month) return window.showToast?.("בחר חודש לייצוא", "warning");
+
+  try {
+    const res = await fetch(`/api/invoices/export?month=${month}`, { credentials: "include" });
+    if (!res.ok) throw new Error("שגיאה ביצוא החשבוניות");
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `חשבוניות-${month}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    window.showToast?.("הקובץ ירד בהצלחה", "success");
+  } catch (err) {
+    console.error(err);
+    window.showToast?.(err.message || "שגיאה ביצוא", "error");
+  }
+});
+
 })();
 
 

@@ -64,12 +64,9 @@ app.use((req, res, next) => {
   if (/\.(html|css|js)$/.test(req.url)) res.setHeader("Cache-Control", "no-store");
   next();
 });
-app.use((err, req, res, next) => {
-  if (err.code === 'EBADCSRFTOKEN') {
-    return res.status(403).json({ ok:false, message:'Invalid CSRF token' });
-  }
-  next(err);
-});
+// 404 – אחרי כל הראוטים, לפני error handler
+
+
 
 // Helmet (CSP tuned for your stack)
 app.use(helmet({
@@ -221,7 +218,7 @@ async function loadUserFromToken(req) {
 const authenticateUser = async (req, res, next) => {
   try {
     const pack = await loadUserFromToken(req);
-    if (!pack) return res.status(401).json({ ok:false, message:"Unauthorized (no token)" });
+    if (!pack) return res.redirect("/login");
     req.user = pack.user;
     req.auth = pack.decoded; // { id, TenantID, role }
     next();
@@ -231,20 +228,16 @@ const authenticateUser = async (req, res, next) => {
   }
 };
 
-// Page guard (redirect to /login for HTML pages)
 function requireAuthPage(req, res, next) {
   loadUserFromToken(req)
     .then(pack => pack ? next() : res.redirect("/login"))
     .catch(() => res.redirect("/login"));
 }
-
-// Roles helpers
 function getRoleForTenant(userDoc, tenantId) {
   try {
     return (userDoc?.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role || null;
   } catch { return null; }
 }
-
 function requireTeamManager(req, res, next) {
   const tenantId = req.user.TenantID;
   const myRole   = getRoleForTenant(req.user, tenantId);
@@ -1312,6 +1305,76 @@ app.put("/api/tenant/update", authenticateUser, async (req, res) => {
     res.status(500).json({ ok:false, message:"שגיאה בעדכון העסק" });
   }
 });
+// ↑ בראש הקובץ
+const XLSX = require("xlsx");
+
+// ↓ אחרי הראוטים הקיימים של invoices
+app.get("/api/invoices/export", authenticateUser, async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    const { month } = req.query;
+    if (!tenantId || !month)
+      return res.status(400).json({ ok: false, message: "חודש לא נבחר" });
+
+    const [year, mon] = month.split("-");
+    const start = new Date(year, mon - 1, 1);
+    const end = new Date(year, mon, 1);
+
+    const invoices = await Invoice.find({
+      tenant: tenantId,
+      createdAt: { $gte: start, $lt: end }
+    }).lean();
+
+    if (!invoices.length)
+      return res.status(404).json({ ok: false, message: "אין חשבוניות בחודש זה" });
+
+    const rows = invoices.map(inv => ({
+      מספר: inv.number,
+      תיאור: inv.description || "",
+      העלה: inv.uploadedByN,
+      תאריך: new Date(inv.createdAt).toLocaleDateString("he-IL"),
+      גודל: `${(inv.size / 1024).toFixed(1)} KB`,
+      קובץ: inv.file?.url || ""
+    }));
+
+    // יצירת sheet רגיל
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // החלפת טקסט בעמודת הקובץ לקישור לחיץ
+    invoices.forEach((inv, i) => {
+      const cellAddress = XLSX.utils.encode_cell({ r: i + 1, c: 5 }); // טור 5 (אינדקס 0-based)
+      const url = inv.file?.url;
+      if (url) {
+        ws[cellAddress] = {
+          t: "s",
+          v: "פתח קובץ",
+          l: { Target: url, Tooltip: "לחץ לפתיחת הקובץ" }
+        };
+      }
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "חשבוניות");
+
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=invoices-${month}.xlsx`
+    );
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.send(buf);
+  } catch (e) {
+    console.error("export invoices error:", e);
+    res
+      .status(500)
+      .json({ ok: false, message: "שגיאת שרת ביצוא החשבוניות" });
+  }
+});
+
 
 // ===== Logout =====
 app.post("/logout", (req, res) => {
@@ -1324,7 +1387,9 @@ app.get("/logout", (req, res) => {
   res.clearCookie("user",  { sameSite:"lax" });
   return res.redirect("/login");
 });
-
+app.get(/^\/(?!login\/?$|manager\/?$|worker\/?$).+/, (req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'views', '404.html'));
+});
 // ===== Errors =====
 app.use((err, req, res, next) => {
   console.error("🔥 Express Error:", err);
