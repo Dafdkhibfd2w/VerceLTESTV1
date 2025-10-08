@@ -36,7 +36,7 @@ const isProd = process.env.NODE_ENV === "production";
 // ===== Feature Catalog (platform toggles) =====
 const FEATURE_CATALOG = {
   invoices:  { label: "חשבוניות",  icon: "fa-file-invoice", default: false },
-  customers: { label: "לקוחות",    icon: "fa-users",         default: false },
+  dispersions: { label: "פיזורים",    icon: "fa-taxi",         default: false },
   suppliers: { label: "ספקים",     icon: "fa-building",      default: false },
   orders:    { label: "הזמנות",    icon: "fa-box",           default: false },
   reports:   { label: "דוחות",     icon: "fa-chart-line",    default: false }
@@ -63,6 +63,12 @@ app.use((req, res, next) => {
   res.on('finish', () => console.timeEnd(tag));
   if (/\.(html|css|js)$/.test(req.url)) res.setHeader("Cache-Control", "no-store");
   next();
+});
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ ok:false, message:'Invalid CSRF token' });
+  }
+  next(err);
 });
 
 // Helmet (CSP tuned for your stack)
@@ -108,7 +114,14 @@ app.use(cors({
 mongoose.set('bufferCommands', false);
 (async () => {
   try {
-    await connectMongoose();
+    await connectMongoose().then(()=> {
+      
+
+
+
+
+      
+    });
     console.log("✅ Mongo connected");
   } catch (e) {
     console.error("❌ Mongo connect failed:", e);
@@ -250,9 +263,13 @@ function isPlatformAdmin(user) {
   return user.platformRole === "admin" || PLATFORM_ADMINS.includes(email);
 }
 
-function requirePlatformAdmin(req, res, next) {
-  if (!req.user) return res.status(401).json({ ok:false, message:"Unauthorized" });
-  if (!isPlatformAdmin(req.user)) return res.status(403).json({ ok:false, message:"Forbidden" });
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "my-super-secret";
+
+function requireTeamAccess(req, res, next) {
+  const token = req.headers["x-team-token"] || req.query.token;
+  if (token !== ADMIN_SECRET) {
+    return res.status(403).json({ ok:false, message:"Access denied" });
+  }
   next();
 }
 function requireRoles(roles = []) {
@@ -297,12 +314,12 @@ app.get('/worker',
   (req, res) => res.sendFile(path.join(__dirname, 'views', 'worker.html'))
 );
 
-app.get('/admin', authenticateUser, requirePlatformAdmin, (req, res) => {
+app.get('/admin', requireTeamAccess, (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
 // ===== Admin – feature catalog =====
-app.get('/api/admin/features-catalog', authenticateUser, requirePlatformAdmin, (req, res) => {
+app.get('/api/admin/features-catalog', requireTeamAccess, (req, res) => {
   res.json({ ok:true, features: FEATURE_CATALOG });
 });
 
@@ -359,33 +376,7 @@ const requireTenantFeature = (feature) => async (req, res, next) => {
 const Invite = require('./models/Invite');
 
 // ===== AUTH: Owner/Manager via OTP =====
-app.post("/auth/request-email-code", async (req, res) => {
-  try {
-    const { name, email, tenantName, tenantPhone } = req.body || {};
-    const cleanName   = clean(name);
-    const ce          = cleanEmail(email);
-    const tName       = clean(tenantName);
-    const tPhone      = clean(tenantPhone);
 
-    if (!cleanName || !isEmail(ce) || !tName || !tPhone) {
-      return res.status(400).json({ ok:false, message:"יש למלא שם, אימייל, שם עסק ומספר טלפון" });
-    }
-    const code = genCode();
-    emailOtpStore[ce] = { code, name: cleanName, tenantPhone: tPhone, tenantName: tName, expires: Date.now() + 5*60*1000 };
-
-    await mailer.sendMail({
-      from: `"New Deli" <${process.env.SMTP_USER}>`,
-      to: ce,
-      subject: "קוד התחברות",
-      text: `שלום ${cleanName}, הקוד שלך הוא: ${code} (תקף ל-5 דקות).`
-    });
-
-    res.json({ ok:true, message:"נשלח קוד לאימייל" });
-  } catch (err) {
-    console.error("request-email-code error:", err);
-    res.status(500).json({ ok:false, message:"שגיאה בשליחת הקוד" });
-  }
-});
 app.post('/api/team/invite', authenticateUser, async (req, res) => {
   try {
     const tenantId = req.user.TenantID;
@@ -400,7 +391,7 @@ app.post('/api/team/invite', authenticateUser, async (req, res) => {
     email = String(email || '').trim().toLowerCase();
     role  = String(role  || 'employee').toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ ok:false, message:'אימייל לא תקין' });
-    if (!['employee','shift_manager','manager'].includes(role)) role = 'employee';
+    if (!['owner','employee','shift_manager','manager'].includes(role)) role = 'employee';
 
     const tenant = await Tenant.findById(tenantId).lean();
     if (!tenant) return res.status(404).json({ ok:false, message:'עסק לא נמצא' });
@@ -430,14 +421,29 @@ app.post('/api/team/invite', authenticateUser, async (req, res) => {
     if (sendInvite) {
       const subject = `הוזמנת להצטרף ל-${tenant.name} במערכת New Deli`;
       const text = `שלום,\n\nהוזמנת להצטרף ל-${tenant.name} במערכת New Deli.\nלהשלמת יצירה/הצטרפות לחשבון והגדרת סיסמה:\n${inviteUrl}\n\nהלינק תקף ל-7 ימים.`;
-      const html = `
-        <div style="font-family:Heebo,Arial,sans-serif;line-height:1.6;color:#222">
-          <h2 style="margin:0 0 12px">הוזמנת ל-${tenant.name}</h2>
-          <p>להשלמת ההרשמה והגדרת סיסמה:</p>
-          <p><a href="${inviteUrl}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px">פתח הזמנה</a></p>
-          <p style="color:#555;font-size:14px">הלינק תקף ל-7 ימים.</p>
-        </div>
-      `;
+const html = `
+  <div style="font-family:Heebo,Arial,sans-serif;line-height:1.6;color:#222">
+    <h2 style="margin:0 0 12px">הוזמנת ל-${tenant.name}</h2>
+    <p>להשלמת ההרשמה והגדרת סיסמה:</p>
+
+    <table role="presentation" cellspacing="0" cellpadding="0" style="margin:12px 0">
+      <tr>
+        <td style="border-radius:8px; background:#2563eb;">
+          <a href="${inviteUrl}"
+             style="display:inline-block; padding:10px 16px; color:#ffffff; text-decoration:none; font-weight:600; border-radius:8px;"
+             target="_blank" rel="noopener noreferrer">
+            פתח הזמנה
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="color:#555;font-size:14px">הלינק תקף ל-7 ימים.</p>
+    <p style="color:#777;font-size:12px">אם הכפתור לא עובד, אפשר להעתיק ולהדביק את הקישור ידנית:<br>
+      <a href="${inviteUrl}" style="color:#2563eb;word-break:break-all">${inviteUrl}</a>
+    </p>
+  </div>
+`;
       try {
         await mailer.sendMail({ from: `"New Deli" <${process.env.SMTP_USER}>`, to: email, subject, text, html });
       } catch (e) {
@@ -468,60 +474,51 @@ app.get('/auth/invite/:token', async (req, res) => {
     res.status(500).json({ ok:false, message:'Server error' });
   }
 });
-app.post('/auth/accept-invite', async (req, res) => {
+app.post("/auth/accept-invite", async (req, res) => {
   try {
     const { token, name, password } = req.body || {};
-    const cleanName = String(name || '').trim();
-    const cleanPass = String(password || '');
-    if (!token || !cleanName || cleanPass.length < 8) {
-      return res.status(400).json({ ok:false, message:'נתונים חסרים/סיסמה קצרה' });
+    if (!token || !name || !password) {
+      return res.status(400).json({ ok: false, message: "נתונים חסרים" });
     }
 
-    const inv = await Invite.findOne({ token });
-    if (!inv || inv.expiresAt < new Date()) return res.status(404).json({ ok:false, message:'הזמנה לא תקפה' });
+    const invite = await Invite.findOne({ token }).populate("tenant");
+    if (!invite || invite.expiresAt < new Date()) {
+      return res.status(400).json({ ok: false, message: "ההזמנה לא תקפה או פגה תוקף" });
+    }
 
-    let user = await User.findOne({ email: inv.email });
-    const tenantId = inv.tenant;
+    let user = await User.findOne({ email: invite.email });
+    const hash = await bcrypt.hash(password, 10);
 
     if (user) {
-      // כבר יש חשבון -> רק מצרפים את החברות אם לא קיימת
-      if (!user.memberships?.some(m => String(m.tenant) === String(tenantId))) {
-        user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
-        user.memberships.push({ tenant: tenantId, role: inv.role });
+      // משתמש קיים → רק עדכן פרטים והוסף את העסק אם לא קיים
+      if (!user.memberships.some(m => String(m.tenant) === String(invite.tenant._id))) {
+        user.memberships.push({ tenant: invite.tenant._id, role: invite.role });
       }
-      user.TenantID = tenantId; // לטובת ה־UI שלך
-      user.TenantName = user.TenantName || undefined; // אופציונלי
-      if (!user.name) user.name = cleanName;
+      if (!user.passwordHash) user.passwordHash = hash;
+      if (!user.name && name) user.name = name;
       await user.save();
     } else {
-      const bcrypt = require('bcrypt');
-      const hash = await bcrypt.hash(cleanPass, 12);
-      const autoUsername = inv.email.split('@')[0];
-
+      // משתמש חדש לגמרי
       user = await User.create({
-        username: autoUsername,
-        name: cleanName,
-        email: inv.email,
+        name,
+        email: invite.email,
         passwordHash: hash,
-        memberships: [{ tenant: tenantId, role: inv.role }],
-        TenantID: tenantId
+        memberships: [{ tenant: invite.tenant._id, role: invite.role }],
       });
     }
 
-    await Invite.deleteOne({ _id: inv._id });
+    // מחיקת ההזמנה לאחר שימוש
+    await invite.deleteOne();
 
-    const payload = { id: user._id.toString(), TenantID: tenantId.toString() };
-    const tokenJwt = jwt.sign(payload, SECRET, { expiresIn: '7d' });
-    res.cookie('token', tokenJwt, {
-      sameSite: 'none', secure: true, httpOnly: true, path: '/', maxAge: 7*24*60*60*1000
-    });
-
-    return res.json({ ok:true, redirect:'/' });
-  } catch (e) {
-    console.error('POST /auth/accept-invite', e);
-    return res.status(500).json({ ok:false, message:'Server error' });
+    // כניסה אוטומטית אחרי קבלת הזמנה
+    signAuthCookie(res, { userId: user._id });
+    res.json({ ok: true, redirect: "/" });
+  } catch (err) {
+    console.error("accept invite error:", err);
+    res.status(500).json({ ok: false, message: "שגיאה בשרת בעת קבלת ההזמנה" });
   }
 });
+
 app.get('/api/team/invites', authenticateUser, async (req, res) => {
   try {
     const tenantId = req.user.TenantID;
@@ -618,71 +615,246 @@ app.post('/api/team/invites/:id/resend', authenticateUser, async (req, res) => {
     res.status(500).json({ ok:false, message:'Server error' });
   }
 });
+app.post("/auth/request-email-code", async (req, res) => {
+  try {
+    const { name, email, tenantName, tenantPhone } = req.body || {};
+    const cleanName   = clean(name);
+    const ce          = cleanEmail(email);
+    const tName       = clean(tenantName);
+    const tPhone      = clean(tenantPhone);
 
+    if (!cleanName || !isEmail(ce) || !tName || !tPhone) {
+      return res.status(400).json({ ok:false, message:"יש למלא שם, אימייל, שם עסק ומספר טלפון" });
+    }
+    const code = genCode();
+    emailOtpStore[ce] = { code, name: cleanName, tenantPhone: tPhone, tenantName: tName, expires: Date.now() + 5*60*1000 };
+
+    await mailer.sendMail({
+      from: `"New Deli" <${process.env.SMTP_USER}>`,
+      to: ce,
+      subject: "קוד התחברות",
+      text: `שלום ${cleanName}, הקוד שלך הוא: ${code} (תקף ל-5 דקות).`
+    });
+
+    res.json({ ok:true, message:"נשלח קוד לאימייל" });
+  } catch (err) {
+    console.error("request-email-code error:", err);
+    res.status(500).json({ ok:false, message:"שגיאה בשליחת הקוד" });
+  }
+});
 app.post("/auth/verify-email-code", async (req, res) => {
   try {
     const { email, code } = req.body || {};
     const ce  = cleanEmail(email);
     const rec = emailOtpStore[ce];
 
-    if (!isEmail(ce))                return res.status(400).json({ ok:false, message:"אימייל לא תקין" });
-    if (!rec)                        return res.status(400).json({ ok:false, message:"לא נשלח קוד" });
+    if (!isEmail(ce))              return res.status(400).json({ ok:false, message:"אימייל לא תקין" });
+    if (!rec)                      return res.status(400).json({ ok:false, message:"לא נשלח קוד" });
     if (rec.expires < Date.now()) { delete emailOtpStore[ce]; return res.status(400).json({ ok:false, message:"קוד פג תוקף" }); }
-    if (rec.code !== String(code))   return res.status(400).json({ ok:false, message:"קוד שגוי" });
+    if (rec.code !== String(code)) return res.status(400).json({ ok:false, message:"קוד שגוי" });
 
-    // User
-    let user = await User.findOne({ email: ce });
-    if (!user) {
-      const base = (rec.name || ce.split("@")[0]).trim();
-      const uniqueUsername = `${base}-${Math.floor(Math.random()*10000)}`;
-      user = await User.create({
-        username: uniqueUsername,
-        email: ce,
-        name: rec.name,
-        role: "user",
-        TenantName: rec.tenantName,
-        memberships: []
-      });
+    // 🧷 Idempotency guard: אם כבר נוצל - רק לחבר ולהחזיר
+    if (rec.used) {
+      const existingUser = await User.findOne({ email: ce });
+      if (!existingUser || !existingUser.TenantID) {
+        return res.status(409).json({ ok:false, message:"הקוד כבר נוצל. נסה לשלוח קוד חדש." });
+      }
+      signAuthCookie(res, { userId: existingUser._id, tenantId: existingUser.TenantID, role: "owner" });
+      return res.json({ ok:true, redirect: roleHomeFor(existingUser) });
     }
 
-    // Always create NEW Tenant for owner flow
-    const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
-const slug = await uniqueTenantSlug(tenantName);
-    const tenant = await Tenant.create({
-      name: tenantName,
-      slug,
-      owner: user._id,
-      settings: { phone: rec.tenantPhone || "" }
-    });
+    // 🧑‍💼 User upsert (מונע מירוץ כפול)
+    const baseName = (rec.name || ce.split("@")[0]).trim();
+    const initUsername = `${baseName}-${Math.floor(Math.random()*10000)}`;
+    let user = await User.findOneAndUpdate(
+      { email: ce },
+      {
+        $setOnInsert: {
+          username: initUsername,
+          name: rec.name,
+          role: "user",
+          TenantName: rec.tenantName,
+          memberships: []
+        }
+      },
+      { upsert: true, new: true }
+    );
 
-    // Update user ⇄ tenant (active)
-    user.TenantID  = tenant._id;
-    user.TenantName = tenantName;
-    user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
-    user.memberships.push({ tenant: tenant._id, role: 'owner' });
+    // 🔁 בדוק אם כבר יש עסק בבעלות המשתמש בשם הזה (מניעת כפילויות)
+    const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
+    let tenant = await Tenant.findOne({ owner: user._id, name: tenantName });
+
+    if (!tenant) {
+      // slug ייחודי; אם יש מירוץ ו-E11000 על slug – נסה מחדש עם סיומת
+      const createTenantSafe = async () => {
+        const trySlug = await uniqueTenantSlug(tenantName);
+        try {
+          return await Tenant.create({
+            name: tenantName,
+            slug: trySlug,
+            owner: user._id,
+            settings: { phone: rec.tenantPhone || "" }
+          });
+        } catch (e) {
+          if (e?.code === 11000) {
+            return await Tenant.create({
+              name: tenantName,
+              slug: `${trySlug}-${Math.random().toString(36).slice(2,5)}`,
+              owner: user._id,
+              settings: { phone: rec.tenantPhone || "" }
+            });
+          }
+          throw e;
+        }
+      };
+      tenant = await createTenantSafe();
+    }
+
+    // 👥 שייך את המשתמש לבעלות אם טרם משויך
+    const alreadyMember = (user.memberships || []).some(m => String(m.tenant) === String(tenant._id));
+    if (!alreadyMember) {
+      user.memberships = Array.isArray(user.memberships) ? user.memberships : [];
+      user.memberships.push({ tenant: tenant._id, role: 'owner' });
+    }
+    user.TenantID = tenant._id;
+    user.TenantName = tenant.name;
     await user.save();
 
-    // cleanup OTP
+    // ✅ סמן שה-OTP נוצל ומחק מאחסון הזמני
+    rec.used = true;
     delete emailOtpStore[ce];
 
-    // sign cookie
+    // 🍪 התחברות
     signAuthCookie(res, { userId: user._id, tenantId: tenant._id, role: "owner" });
-
     return res.json({ ok:true, message:"מחובר!", redirect: roleHomeFor(user) });
   } catch (err) {
     console.error("verify-email-code error:", err);
-    res.status(500).json({ ok:false, message:"שגיאה באימות" });
+    return res.status(500).json({ ok:false, message:"שגיאה באימות" });
   }
 });
 
+
+// יצירת עסק לבעלים על-ידי צוות (ללא התחברות של היוצר)
+app.post("/auth/create", async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    const ce = cleanEmail(email);
+    const rec = emailOtpStore[ce]; // ה־store הזמני מהבקשה בחלון
+
+    if (!isEmail(ce)) return res.status(400).json({ ok:false, message: "אימייל לא תקין" });
+    if (!rec)        return res.status(400).json({ ok:false, message: "חסר מידע יצירה (שלח שוב טופס)" });
+
+    // 1) יוצרים/מאחזרים את בעל העסק לפי האימייל שהוזן בחלון
+    const baseName = (rec.name || ce.split("@")[0]).trim();
+    const initUsername = `${baseName}-${Math.floor(Math.random()*10000)}`;
+
+    let ownerUser = await User.findOneAndUpdate(
+      { email: ce },
+      {
+        $setOnInsert: {
+          username: initUsername,
+          name: rec.name,
+          role: "user",
+          TenantName: rec.tenantName,
+          memberships: []
+        }
+      },
+      { upsert: true, new: true }
+    );
+
+    // 2) יוצר Tenant חדש בבעלות ownerUser (Idempotent בשם)
+    const tenantName = rec.tenantName || `${rec.name || "עסק חדש"} ${Date.now()}`;
+    let tenant = await Tenant.findOne({ owner: ownerUser._id, name: tenantName });
+    if (!tenant) {
+      const createTenantSafe = async () => {
+        const trySlug = await uniqueTenantSlug(tenantName);
+        try {
+          return await Tenant.create({
+            name: tenantName,
+            slug: trySlug,
+            owner: ownerUser._id,
+            settings: { phone: rec.tenantPhone || "" }
+          });
+        } catch (e) {
+          if (e?.code === 11000) {
+            return await Tenant.create({
+              name: tenantName,
+              slug: `${trySlug}-${Math.random().toString(36).slice(2,5)}`,
+              owner: ownerUser._id,
+              settings: { phone: rec.tenantPhone || "" }
+            });
+          }
+          throw e;
+        }
+      };
+      tenant = await createTenantSafe();
+    }
+
+    // 3) הקפד שבעל העסק משויך כ-owner (בלי לגעת במשתמש שמחובר כרגע!)
+    const alreadyOwner = (ownerUser.memberships || []).some(m => String(m.tenant) === String(tenant._id));
+    if (!alreadyOwner) {
+      ownerUser.memberships = Array.isArray(ownerUser.memberships) ? ownerUser.memberships : [];
+      ownerUser.memberships.push({ tenant: tenant._id, role: 'owner' });
+    }
+    // לא משנים ownerUser.TenantID כאן בכוונה; הוא יקבע בעצמו בעת התחברות ראשונה
+    await ownerUser.save();
+
+    // 4) שליחת הזמנה לבעל העסק להשלים הרשמה/סיסמה (ממחזר את Invite)
+    const token = require('crypto').randomBytes(24).toString('base64url');
+    const expiresAt = new Date(Date.now() + 7*24*60*60*1000);
+    await Invite.create({
+      tenant: tenant._id,
+      email: ce,
+      role: 'owner',
+      token,
+      expiresAt,
+      createdBy: (req.user?._id || null)
+    }); // תואם לזרימת ההזמנות שלך:contentReference[oaicite:1]{index=1}
+
+    const baseUrl = process.env.BASE_URL || 'https://your-app-url';
+    const inviteUrl = `${baseUrl}/login?invite=${encodeURIComponent(token)}`;
+
+    try {
+      await mailer.sendMail({
+        from: `"New Deli" <${process.env.SMTP_USER}>`,
+        to: ce,
+        subject: `הוזמנת כבעל העסק ל-${tenant.name}`,
+        text: `שלום ${rec.name || ''},\n\nנוצר עבורך עסק חדש: ${tenant.name}.\nלהשלמת יצירה/הגדרת סיסמה והתחברות:\n${inviteUrl}\n\nהלינק תקף ל-7 ימים.`,
+      });
+    } catch (e) {
+      console.error('owner invite mail failed:', e.message);
+    }
+
+    // 5) נקה זיכרון זמני
+    rec.used = true;
+    delete emailOtpStore[ce];
+
+    // 6) החזרה: לא מחברים אף אחד. רק סטטוס ו־IDs לשימוש UI
+    return res.json({
+      ok: true,
+      message: "העסק נוצר. הזמנה נשלחה לבעל העסק במייל.",
+      tenant: { id: String(tenant._id), name: tenant.name },
+      owner:  { id: String(ownerUser._id), email: ownerUser.email }
+    });
+  } catch (err) {
+    console.error("auth/create error:", err);
+    return res.status(500).json({ ok:false, message:"שגיאה ביצירת העסק" });
+  }
+});
+
+
+
+
 // ===== AUTH: Employee login + forgot/reset =====
-app.post("/auth/employee/login", authLimiter, async (req, res) => {
+// ===== Unified login: /auth/login (and keep /auth/employee/login for compatibility) =====
+const unifiedLoginHandler = async (req, res) => {
   try {
     const { email, password } = req.body || {};
     const ce = cleanEmail(email);
     if (!isEmail(ce) || !password || String(password).length < 6) {
       return res.status(400).json({ ok:false, message:"אימייל/סיסמה לא תקינים" });
     }
+
     const user = await User.findOne({ email: ce });
     if (!user || !user.passwordHash) {
       return res.status(400).json({ ok:false, message:"משתמש לא נמצא או שאין סיסמה" });
@@ -690,46 +862,70 @@ app.post("/auth/employee/login", authLimiter, async (req, res) => {
     const ok = await bcrypt.compare(password, user.passwordHash);
     if (!ok) return res.status(401).json({ ok:false, message:"סיסמה שגויה" });
 
-    // choose active tenant
+    // ---------- resolve active tenant & role ----------
     let tenantId = user.TenantID;
+    let role = null;
+
+    // אם יש TenantID קיים – נוודא שהוא באמת קשור למשתמש (כבעלים או כחבר צוות)
+    if (tenantId) {
+      const isOwnerOfActive = await Tenant.exists({ _id: tenantId, owner: user._id });
+      const memRoleActive = (user.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role || null;
+      if (isOwnerOfActive) role = 'owner';
+      else if (memRoleActive) role = memRoleActive;
+      else {
+        // לא באמת שייך → ננקה ונחפש אחרת
+        tenantId = undefined;
+      }
+    }
     if (!tenantId) {
       const owned = await Tenant.findOne({ owner: user._id }).select("_id");
-      if (owned) tenantId = owned._id;
+      if (owned) {
+        tenantId = owned._id;
+        role = 'owner';
+      }
     }
-    if (!tenantId) return res.status(400).json({ ok:false, message:"לא משויך לעסק פעיל" });
+    if (!tenantId) {
+      const m = (user.memberships || [])[0];
+      if (m) {
+        tenantId = m.tenant;
+        role = m.role || 'employee';
+      }
+    }
 
-    // role
-    let role = "employee";
-    const isOwner = await Tenant.exists({ _id: tenantId, owner: user._id });
-    if (isOwner) role = "owner";
+    // אם אין כלום – המשתמש לא משויך ולא בעל עסק
+    if (!tenantId) {
+      // 200 כדי שה-UI יוכל להציג מצב מיוחד, לא "שגיאה".
+      return res.status(200).json({
+        ok: false,
+        code: "NO_TENANT",
+        message: "לא משויך לעסק ולא בעל עסק"
+      });
+    }
 
+    // אם עדיין אין role – נקבע לפי ממברשיפ או בעלות
+    if (!role) {
+      const memRole = (user.memberships || []).find(m => String(m.tenant) === String(tenantId))?.role;
+      role = memRole || (await Tenant.exists({ _id: tenantId, owner: user._id }) ? 'owner' : 'employee');
+    }
+
+    // נשמור TenantID פעיל למשתמש אם השתנה
+    if (!user.TenantID || String(user.TenantID) !== String(tenantId)) {
+      user.TenantID = tenantId;
+      await user.save();
+    }
+
+    // חתימת קוקה ויציאה לדשבורד ("/" כבר מפנה ל-/manager או /worker לפי תפקיד)
     signAuthCookie(res, { userId: user._id, tenantId, role });
-    res.json({ ok:true, redirect:"/" });
+    return res.json({ ok:true, redirect:"/" });
   } catch (e) {
-    console.error("employee/login error:", e);
+    console.error("unified login error:", e);
     res.status(500).json({ ok:false, message:"Server error" });
   }
-});
+};
 
-app.post("/auth/employee/forgot", authLimiter, async (req, res) => {
-  try {
-    const ce = cleanEmail(req.body?.email);
-    if (!isEmail(ce)) return res.status(400).json({ ok:false, message:"אימייל לא תקין" });
-
-    const user = await User.findOne({ email: ce }).select("_id email");
-    if (!user) return res.json({ ok:true, message:"אם המשתמש קיים – יישלח קישור איפוס." });
-
-    const token = require("crypto").randomBytes(24).toString("hex");
-    passwordResetStore[token] = { email: ce, expires: Date.now() + 15*60*1000 };
-    const resetUrl = `${req.protocol}://${req.get("host")}/reset-password?token=${token}`;
-    console.log(`[RESET] for ${ce}: ${resetUrl}`);
-
-    res.json({ ok:true, message:"שלחנו קישור איפוס אם המשתמש קיים." });
-  } catch (e) {
-    console.error("employee/forgot error:", e);
-    res.status(500).json({ ok:false, message:"Server error" });
-  }
-});
+app.post("/auth/login", authLimiter, unifiedLoginHandler);
+// תאימות לאחור: מי שקורא לנתיב הישן יקבל אותה לוגיקה
+app.post("/auth/employee/login", authLimiter, unifiedLoginHandler);
 
 app.post("/auth/employee/reset", authLimiter, async (req, res) => {
   try {
@@ -753,7 +949,7 @@ app.post("/auth/employee/reset", authLimiter, async (req, res) => {
 
 // ===== Admin tenants features =====
 app.put("/api/admin/tenants/:id/features",
-  authenticateUser, requirePlatformAdmin, async (req, res) => {
+  requireTeamAccess, async (req, res) => {
     const { id } = req.params;
     const { key, value, ...bulk } = req.body || {};
     const tenant = await Tenant.findById(id);
@@ -775,7 +971,7 @@ app.put("/api/admin/tenants/:id/features",
 );
 
 // ===== Team: create/add member =====
-app.post('/api/team/members', authenticateUser, requireTeamManager, async (req, res) => {
+app.post('/api/team/members', requireTeamManager, async (req, res) => {
   let { name, email, role = 'employee', sendInvite = true } = req.body || {};
   email = String(email).trim().toLowerCase();
 
@@ -1086,7 +1282,7 @@ app.put("/api/user/update", authenticateUser, async (req, res) => {
 });
 
 // ===== Admin tenants list =====
-app.get("/api/admin/tenants", authenticateUser, requirePlatformAdmin, async (req, res) => {
+app.get("/api/admin/tenants", requireTeamAccess, async (req, res) => {
   const tenants = await Tenant.find({}).select("name createdAt owner settings features")
     .populate({ path:"owner", select:"name email" }).lean();
   res.json({ ok:true, tenants: tenants.map(t => ({
@@ -1136,7 +1332,7 @@ app.use((err, req, res, next) => {
 });
 
 // ===== Start / Export (Vercel) =====
-const vercel = true; // אם מריצים על Vercel כ-Serverless function, שנה ל-true וייצא את app
+const vercel = false; // אם מריצים על Vercel כ-Serverless function, שנה ל-true וייצא את app
 if (vercel) {
   module.exports = app;
 } else {

@@ -33,8 +33,32 @@
         <input id="tenantSearch" type="search" placeholder="... חפש עסק" aria-label="חיפוש עסק" />
         <i class="fas fa-search ico"></i>
       </div>
+      <button class="btn-primary createtenant"><i class="fa fa-plus"></i> עסק חדש</button>
     </div>
+<div class="modal-overlay" id="createTenantModal">
+  <div class="modal">
+    <h2><i class="fa fa-briefcase"></i> יצירת עסק חדש</h2>
 
+    <form id="createTenantForm">
+      <label>שם העסק</label>
+      <input type="text" id="tenantName" placeholder="לדוגמה: ניו דיילי סניף מרכז" required>
+
+      <label>טלפון עסקי</label>
+      <input type="text" id="tenantPhone" placeholder="לדוגמה: 050-1234567" required>
+
+      <label>שם מלא בעל העסק</label>
+      <input type="text" id="ownerName" placeholder="לדוגמה: יוסי כהן" required>
+
+      <label>אימייל</label>
+      <input type="email" id="ownerEmail" placeholder="example@email.com" required>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="cancelModal">ביטול</button>
+        <button type="submit" class="btn-primary">צור עסק</button>
+      </div>
+    </form>
+  </div>
+</div>
     <!-- Card + Table -->
     <div class="admin-card">
       <div id="tenantsTableWrap">

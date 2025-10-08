@@ -414,6 +414,11 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-lg);
+  box-shadow:
+  0 8px 16px rgba(0,0,0,.12),
+  0 3px  6px rgba(0,0,0,.08),
+  0 0 0 1px rgba(0,0,0,.05);
+  transition: 0.3s;
 }
 
 .stat-icon {
@@ -934,7 +939,7 @@ body {
 }
 
 /* גוף הטקסט */
-#section-invoices .invoice-card .meta{ grid-column:2; display:grid; row-gap:4px; }
+#section-invoices .invoice-card .meta{ grid-column:2;row-gap:4px; }
 #section-invoices .invoice-card .name{
   font-weight:800; font-size:1.05rem; text-align:right;
   white-space:normal; overflow:visible; text-overflow:clip;

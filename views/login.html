@@ -20,73 +20,21 @@
     <div class="login-card" role="region" aria-label="Login Card">
 
       <!-- צד אינפורמטיבי -->
-      <aside class="side-card" aria-label="מידע כללי">
-        <h3>ברוך הבא 👋</h3>
-        <p class="note">
-          כניסה אחודה למנהלים ולעובדים. מנהלים נכנסים עם קוד אימות (OTP), עובדים נכנסים עם אימייל+סיסמה לאחר הצטרפות דרך הזמנה.
-        </p>
-        <ul class="note">
-          <li>אבטחה חזקה (OTP/סיסמה) + תמיכה בעסקים מרובים</li>
-          <li>UI אחד – תצוגה דינמית לפי תפקיד</li>
-          <li>ניתוב תקני, ולידציות וניהול שגיאות מוקשח</li>
-        </ul>
-      </aside>
+<aside class="side-card" aria-label="ברוך הבא">
+  <h3>ברוך הבא למערכת</h3>
+  <p class="note">
+    כאן תוכל להיכנס לחשבון שלך כמנהל או כעובד.  
+    מנהלים נכנסים עם קוד אימות, ועובדים עם אימייל וסיסמה.
+  </p>
+</aside>
 
       <!-- אזור טפסים עם טאבים -->
-      <section class="tabs" aria-label="Login Area">
-        <nav class="tab-list" role="tablist" aria-label="Login Tabs">
-          <button class="tab-btn" id="tab-owner" role="tab" aria-controls="panel-owner" aria-selected="true">
-            בעלים / מנהל
-          </button>
-          <button class="tab-btn" id="tab-employee" role="tab" aria-controls="panel-employee" aria-selected="false">
-            עובד
-          </button>
-        </nav>
+
 
         <!-- טאב מנהל/בעלים (OTP במייל) -->
-        <div id="panel-owner" class="tab-panel active" role="tabpanel" aria-labelledby="tab-owner">
-          <form id="ownerForm" class="form-grid" novalidate>
-            <div class="form-row row">
-              <label class="required" for="nameInput">שם מלא</label>
-              <input id="nameInput" name="name" type="text" placeholder="דוגמה: יעל כהן" autocomplete="name" required />
-            </div>
 
-            <div class="form-row row">
-              <label class="required" for="emailInput">אימייל</label>
-              <input id="emailInput" name="email" type="email" placeholder="name@example.com" autocomplete="email" required />
-            </div>
-
-            <div class="form-row inline">
-              <div class="form-row">
-                <label class="required" for="tenantNameInput">שם העסק</label>
-                <input id="tenantNameInput" name="tenantName" type="text" placeholder="לדוגמה: ניו דלי" required />
-              </div>
-              <div class="form-row">
-                <label class="" for="tenantPhoneInput">טלפון העסק</label>
-                <input id="tenantPhoneInput" name="tenantPhone" type="text" placeholder="052-1234567" />
-              </div>
-            </div>
-
-            <div class="actions">
-              <button id="sendEmailCodeBtn" type="button" class="btn">
-                שלח קוד למייל
-              </button>
-
-              <div id="codeBlock" class="hidden" aria-hidden="true">
-                <label for="codeInput">הכנס קוד שקיבלת</label>
-                <input id="codeInput" name="code" type="text" inputmode="numeric" placeholder="6 ספרות" maxlength="6" />
-                <button id="verifyEmailCodeBtn" type="button" class="btn btn-secondary">
-                  אמת והתחבר
-                </button>
-              </div>
-
-              <div id="ownerHint" class="note" role="status" aria-live="polite"></div>
-            </div>
-          </form>
-        </div>
-
-        <!-- טאב עובד (אימייל + סיסמה) -->
-        <div id="panel-employee" class="tab-panel" role="tabpanel" aria-labelledby="tab-employee">
+        <div id="panel-employee" class="tab-panel active" role="tabpanel" aria-labelledby="tab-employee">
+          <h1>מערכת התחברות</h1>
           <form id="employeeForm" class="form-grid" novalidate>
             <div class="form-frow row">
               <label class="required" for="empEmailInput">אימייל</label>
@@ -107,7 +55,6 @@
             </div>
           </form>
         </div>
-      </section>
     </div>
   </main>
 

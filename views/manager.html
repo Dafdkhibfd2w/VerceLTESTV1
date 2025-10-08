@@ -26,9 +26,9 @@
         <i class="fas fa-file-invoice"></i>
         <span>חשבוניות</span>
       </a>
-      <a href="#customers" class="nav-item" data-section="customers" data-feature="customers">
-        <i class="fas fa-users"></i>
-        <span>לקוחות</span>
+      <a href="#dispersions" class="nav-item" data-section="dispersions" data-feature="dispersions">
+        <i class="fas fa-taxi"></i>
+        <span>פיזורים</span>
       </a>
       <a href="#suppliers" class="nav-item" data-section="suppliers" data-feature="suppliers">
         <i class="fas fa-building"></i>
@@ -125,12 +125,12 @@
   </div>
   <div class="card-body">
     <div class="logs-list" id="logsList">
-      <div class="loading">טוען...</div>
+      <div class="loading">טוען ...</div>
     </div>
   </div>
     <div class="card-body">
     <div class="invitesTable" id="invitesTable">
-      <div class="loading">טוען...</div>
+      <div class="loading"></div>
     </div>
   </div>
 </div>
@@ -140,7 +140,7 @@
             <div class="card-header">
               <h3>
                 <i class="fas fa-users"></i>
-                צוות העבודה
+                עובדים
               </h3>
               <button class="btn btn-outline btn-sm" id="btnAddMember">
                 <i class="fas fa-user-plus"></i>
@@ -228,12 +228,12 @@
 
 
       <!-- 👥 CUSTOMERS SECTION -->
-      <section id="section-customers" class="section" data-feature="customers">
+      <section id="section-dispersions" class="section" data-feature="dispersions">
         <div class="card">
           <div class="card-header">
             <h3>
-              <i class="fas fa-users"></i>
-              לקוחות
+              <i class="fas fa-taxi"></i>
+              פיזורים
             </h3>
             <div class="search-box">
               <i class="fas fa-search"></i>
@@ -242,11 +242,11 @@
           </div>
           <div class="card-body">
             <div class="empty-state">
-              <i class="fas fa-users" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
-              <h3>אין לקוחות עדיין</h3>
+              <i class="fas fa-taxi" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
+              <h3>אין פיזורים עדיין</h3>
               <p>הוסף את הלקוח הראשון שלך</p>
               <button class="btn btn-primary mt-lg">
-                <i class="fas fa-user-plus"></i>
+                <i class="fas fa-taxi"></i>
                 הוסף לקוח
               </button>
             </div>
@@ -472,7 +472,6 @@
         <div class="form-row">
           <label>שם מלא</label>
           <input type="text" id="am_name" required placeholder="לדוגמה: ישראל ישראלי" />
-          <small class="hint">שם שיוצג בתוך המערכת</small>
         </div>
 
         <div class="form-row">
@@ -480,11 +479,6 @@
           <input type="email" id="am_email" required placeholder="user@example.com" />
         </div>
 
-        <div class="form-row">
-          <label>סיסמה זמנית</label>
-          <input type="password" id="am_password" required minlength="8" placeholder="לפחות 8 תווים" />
-          <small class="hint">העובד יוכל להחליף בהתחברות הראשונה</small>
-        </div>
 
         <div class="form-row">
           <label>תפקיד</label>

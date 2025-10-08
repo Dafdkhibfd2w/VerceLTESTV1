@@ -330,4 +330,29 @@
           showToast('שגיאה בטעינת ההזמנה.', 'error');
   }
 })();
+
+
+
+document.getElementById('ownerLoginForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('ownerEmail').value.trim();
+  const password = document.getElementById('ownerPass').value;
+  const hint = document.getElementById('ownerHint');
+
+  try {
+    const t = await fetch('/csrf-token', { credentials: 'include' }).then(r=>r.json());
+    const res = await fetch('/auth/owner/login', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', 'x-csrf-token': t.csrfToken },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
+    location.href = data.redirect || '/';
+  } catch (err) {
+    hint.textContent = err.message || 'שגיאה בהתחברות';
+  }
+});
+
 })();

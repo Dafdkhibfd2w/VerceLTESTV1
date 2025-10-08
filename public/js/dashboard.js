@@ -36,7 +36,7 @@
   const sectionConfig = {
     home:      { title: "דף הבית",   subtitle: "לוח בקרה וניהול",   actionText: "חשבונית חדשה", actionIcon: "fa-plus" },
     invoices:  { title: "חשבוניות",  subtitle: "ניהול חשבוניות",    actionText: "חשבונית חדשה", actionIcon: "fa-plus" },
-    customers: { title: "לקוחות",    subtitle: "ניהול לקוחות",       actionText: "הוסף לקוח",     actionIcon: "fa-user-plus" },
+    dispersions: { title: "פיזורים",    subtitle: "ניהול פיזורים",       actionText: "הוסף פיזור",     actionIcon: "fa-user-plus" },
     suppliers: { title: "ספקים",     subtitle: "ניהול ספקים",        actionText: "הוסף ספק",      actionIcon: "fa-plus" },
     orders:    { title: "הזמנות",    subtitle: "ניהול הזמנות",       actionText: "הזמנה חדשה",    actionIcon: "fa-plus" },
     reports:   { title: "דוחות",     subtitle: "דוחות וסטטיסטיקות",  actionText: "ייצא דוח",      actionIcon: "fa-download" },
@@ -45,7 +45,7 @@
   const bottomNavItems = [
     { section: "home",      label: "בית",     icon: "fa-house" },
     { section: "invoices",  label: "חשבוניות", icon: "fa-file-invoice", feature: "invoices" },
-    { section: "customers", label: "לקוחות",   icon: "fa-users",        feature: "customers" },
+    { section: "dispersions", label: "פיזורים",   icon: "fa-taxi",        feature: "dispersions" },
     { section: "suppliers", label: "ספקים",    icon: "fa-building",     feature: "suppliers" },
     { section: "orders",    label: "הזמנות",   icon: "fa-briefcase",    feature: "orders" },
     { section: "settings",  label: "הגדרות",   icon: "fa-gear" }
@@ -513,7 +513,7 @@ async function createMember(){
     switch (section) {
       case "home":
       case "invoices":  window.showToast?.("פתיחת חשבונית חדשה", "info"); break;
-      case "customers": window.showToast?.("הוספת לקוח", "info"); break;
+      case "dispersions": window.showToast?.("הוספת פיזור", "info"); break;
       case "suppliers": window.showToast?.("הוספת ספק", "info"); break;
       case "orders":    window.showToast?.("יצירת הזמנה חדשה", "info"); break;
       case "reports":   window.showToast?.("ייצוא דוח...", "success"); break;
@@ -688,6 +688,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // --- 3) המשך אתחול המסכים ---
     renderTenant();
     await loadLogs().catch(() => {});
+    await loadInvites().catch(() => renderInvites([])); // ← הוספנו
     setInterval(() => loadLogs().catch(() => {}), 60_000);
 
     applyFeatureGates();
