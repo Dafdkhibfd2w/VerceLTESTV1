@@ -155,48 +155,7 @@ body {
   color: var(--text-secondary);
   font-size: var(--text-sm);
 }
-.invoices-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; }
 
-.invoice-card {
-  display: grid;
-  gap: 10px;
-  align-items: center;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-surface);
-  text-decoration: none;
-  color: inherit;
-  transition: transform .12s ease, box-shadow .2s ease;
-}
-.invoice-card .icn { font-size: 22px; color: var(--text-secondary); }
-.invoice-card .name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.invoice-card .sub  { font-size: .85rem; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.invoice-card:hover { transform: translateY(-1px); box-shadow: var(--shadow); }
-.invoice-card .link {
-  display: flex;
-  gap: 12px;
-  text-decoration: none;
-  color: inherit;
-  flex: 1;
-}
-.invoices-list .invoice-card { position: relative; }
-
-.invoice-card .btn-del-invoice{
-  position: absolute;
-  inset-inline-end: 8px; /* או right: 8px; */
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--error);
-  cursor: pointer;
-  z-index: 3;                           /* מעל הלינק */
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-}
 
 /* Content */
 .content {
@@ -224,9 +183,10 @@ body {
 }
 
 .card-header {
+  display: flex;
+
   padding: var(--space-lg);
   border-bottom: 1px solid var(--border);
-  display: flex;
   justify-content: space-between;
   align-items: center;
 }
@@ -525,9 +485,6 @@ body {
     grid-template-columns: 1fr;
   }
   
-  .info-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 @media (max-width: 768px) {
@@ -549,7 +506,7 @@ body {
     grid-template-columns: 1fr;
   }
 }
-.theme-toggle {
+.theme-toggle, #refreshAllBtn {
   width: 44px;
   height: 44px;
   border-radius: var(--radius);
@@ -564,8 +521,20 @@ body {
   font-size: var(--text-lg);
   padding: 0;
 }
-
-.theme-toggle:hover {
+.pending {
+  display: inline-block;
+  background: var(--warning-bg, #facc15);
+  color: var(--warning-text, #1a1a1a);
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+.pending-invite {
+  opacity: 0.8;
+  border: 1px dashed var(--muted);
+}
+.theme-toggle:hover, #refreshAllBtn:hover {
   background: var(--primary);
   color: var(--text-inverse);
   border-color: var(--primary);
@@ -877,139 +846,42 @@ body {
   /* מונע גלילה לרוחב */
   .team-card .member .email{ max-width: 100%; }
 }
-/* ==== invoices: תיקון מובייל ==== */
-/* ===== invoices: תיקוני מובייל ממוקדים ===== */
 
-
-/* ===== FIX: מובייל – עמוד חשבוניות נפתח לרוחב מלא ===== *//* ===== Invoices – Mobile Redesign (RTL) ===== */
-/* ===============================
-   INVOICES – MOBILE HARD OVERRIDE
-   =============================== */
-/* ===== Invoices: יישור רוחבים בין header ↔ body (כללי) ===== */
-#section-invoices {
-  --inv-px: clamp(12px, 4vw, 24px);   /* מרווח צד פנימי אחיד */
-  --inv-gap: 16px;                    /* ריווח בין כרטיסים */
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
 }
-
-/* כותרת+תוכן עם אותו padding צדדי → קצוות מיושרים */
-#section-invoices .card-header,
-#section-invoices .card-body { padding-inline: var(--inv-px) !important; }
-
-/* לא למרכז טקסטים מהעטיפות */
-#section-invoices .page-display,
-#section-invoices .card { text-align: initial !important; }
-
-/* סרגל חיפוש/העלאה – 100% רוחב, בלי min-widthים דביקים */
-/* #section-invoices .header-filters { display:flex; flex-wrap: wrap; gap:12px; width:100%; } */
-#section-invoices .search-box { width:100%; }
-#section-invoices .search-box input {
-  width:100% !important; min-width:0 !important;
-  padding:12px 44px 12px 12px; border-radius:12px; font-size:16px;
+.export-options .opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
 }
-#section-invoices #btnUploadInvoice { width:100%; padding:12px; border-radius:12px; font-size:16px; }
-
-/* רשימת חשבוניות – טור אחד כברירת מחדל */
-#section-invoices .invoices-list {
-  display:grid; grid-template-columns: 1fr; gap: var(--inv-gap);
-  padding-inline: 0 !important; margin-inline: 0 !important; width:100%;
-}
+.export-options .opt:hover { background: rgba(255,255,255,0.1); }
 
 /* דסקטופ רחב – מעבר לגריד מרובה עמודות יפות */
-@media (min-width: 1200px) {
-  #section-invoices .invoices-list {
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  }
-}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 
 /* כרטיס חשבונית – אייקון | טקסט | פעולות (בלי absolute) */
-#section-invoices .invoice-card{
-  position: relative;                   /* לעוגן overlay של הקישור */
-  align-items:start; column-gap:12px; row-gap:8px;
-  padding:14px; border-radius:16px; border:1px solid var(--border);
-  background:var(--bg-surface); width:100%; margin:0;
+
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* או גובה קבוע אם זה אזור ספציפי */
 }
 
-/* אייקון קובץ */
-#section-invoices .invoice-card .icn{
-  width:48px; height:48px; border-radius:12px;
-  display:flex; align-items:center; justify-content:center;
-  background:var(--bg); color:var(--primary); font-size:20px;
-  grid-column:1;
-}
 
-/* גוף הטקסט */
-#section-invoices .invoice-card .meta{ grid-column:2;row-gap:4px; }
-#section-invoices .invoice-card .name{
-  font-weight:800; font-size:1.05rem; text-align:right;
-  white-space:normal; overflow:visible; text-overflow:clip;
-}
-#section-invoices .invoice-card .sub{
-  font-size:.95rem; color:var(--text-secondary); text-align:right;
-  white-space:normal; overflow:visible; text-overflow:clip;
-}
-
-/* data-label תמיד באותה שורה (RTL) */
-#section-invoices .invoice-card .name[data-label],
-#section-invoices .invoice-card .sub[data-label]{
-  display:inline-flex; align-items:baseline; gap:.35rem;
-  direction:rtl; min-width:0; max-width:100%;
-}
-#section-invoices .invoice-card .name[data-label]::before,
-#section-invoices .invoice-card .sub[data-label]::before{
-  content: attr(data-label); font-weight:600; color:var(--text-secondary); white-space:nowrap;
-}
-#section-invoices .invoice-card [data-label] > *{
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;
-}
-
-/* פעולות (מחיקה/אחרות) – בעמודת actions */
-#section-invoices .invoice-card .btn-del-invoice,
-#section-invoices .invoice-card .btn-action{
-  grid-column:3; width:40px; height:40px; border-radius:12px;
-  border:1px solid var(--border); background:var(--bg);
-  display:flex; align-items:center; justify-content:center;
-  justify-self:end; align-self:start; z-index:2;   /* מעל ה-overlay */
-  margin-top: 10px;
-}
-
-/* קישור נמתח — כל הכרטיס לחיץ, בלי לשבור לייאאוט */
-#section-invoices .invoice-card .link{
-  position: static; display:block; text-decoration:none; color:inherit;
-}
-#section-invoices .invoice-card .link::after{
-  content:""; position:absolute; inset:0; z-index:1;   /* שכבת קליק שקופה */
-}
-
-/* מובייל/טאבלט – שמירה על פריסה נקייה וצמודה לימין */
-@media (max-width: 1024px) {
-  #section-invoices .invoice-card{ line-height:0.9; }
-  #section-invoices .invoice-card .meta{
-    display:grid; row-gap:2px;
-  }
-}
-
-/* טלפונים קטנים מאוד */
-@media (max-width: 360px){
-  #section-invoices .invoice-card .icn{ width:36px; height:36px; font-size:18px; }
-  #section-invoices .invoice-card .btn-del-invoice,
-  #section-invoices .invoice-card .btn-action{ width:36px; height:36px; }
-  #section-invoices .invoice-card{ padding:12px; }
-}
-
-/* טווח ביניים (אופציונלי): “הדבקה” לשוליים אם יש padding חיצוני של .content */
-@media (min-width: 900px) and (max-width: 1200px){
-  /* בטל שוליים חיצוניים של ההורה אם יש: מרחיב את הסקשן לצדדים */
-  #section-invoices{
-    width: calc(100% + 48px);           /* אם --space-xl=24px → 24*2=48 */
-    inset-inline-start: -24px;           /* RTL: להזיז לכיוון הימני */
-    position: relative;
-  }
-}
-
-/* עיצוב כללי לשדה בחירת חודש */
-#exportMonth {
-  background: var(--card, #141c2f);
-  color: var(--primary);
+#exportMonthModal {
+  background: rgba(255,255,255,0.05);
   border: 1px solid var(--border, #334155);
   border-radius: 10px;
   padding: 6px 10px;
@@ -1019,29 +891,471 @@ body {
   transition: all 0.25s ease;
   cursor: pointer;
   direction: ltr; /* כדי שהתאריך יופיע נכון */
-  min-width: 140px;
+  min-width: 250px;
 }
 
 /* אפקט ריחוף */
-#exportMonth:hover {
+#exportMonthModal:hover {
   border-color: var(--primary, #3b82f6);
   box-shadow: 0 0 6px rgba(59,130,246,0.4);
 }
 
 /* במצב פוקוס */
-#exportMonth:focus {
+#exportMonthModal:focus {
   border-color: var(--primary, #3b82f6);
   background: rgba(59,130,246,0.1);
   box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
 }
 
 /* מצב כהה/בהיר */
-[data-theme="light"] #exportMonth {
+[data-theme="light"] #exportMonthModal {
   background: #fff;
   color: #111;
   border-color: #ccc;
 }
-[data-theme="light"] #exportMonth:hover {
+[data-theme="light"] #exportMonthModal:hover {
   border-color: #3b82f6;
   box-shadow: 0 0 6px rgba(59,130,246,0.2);
+}
+
+
+
+/* ===== DISPERSIONS – רספונסיבי מלא ===== */
+
+/* סרגל כלים עליון */
+.dispersions-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.dispersions-toolbar .search-box {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.dispersions-toolbar .search-box input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.95rem;
+}
+
+.dispersions-toolbar .search-box i {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+/* כפתורים בסרגל */
+.dispersions-toolbar .btn {
+  white-space: nowrap;
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+/* רשימת פיזורים – גריד רספונסיבי */
+.dispersions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+/* כרטיס פיזור */
+.disp-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "price meta actions";
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  align-items: start;
+}
+
+.disp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-color: var(--primary);
+}
+
+/* מחיר – עיגול גדול */
+.disp-price {
+  grid-area: price;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.disp-price .num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.disp-price .lbl {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+/* מידע */
+.disp-meta {
+  grid-area: meta;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.disp-line {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.disp-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disp-title i {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.disp-small {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.disp-small i {
+  width: 16px;
+  opacity: 0.7;
+}
+
+/* פעולות */
+.disp-actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.disp-actions .icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.disp-actions .icon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.disp-actions .icon-btn.danger {
+  color: var(--error);
+}
+
+.disp-actions .icon-btn.danger:hover {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+/* ===== מובייל – התאמות ===== */
+@media (max-width: 640px) {
+  /* סרגל כלים – עמודה */
+  .dispersions-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dispersions-toolbar .search-box,
+  .dispersions-toolbar .btn {
+    width: 100%;
+  }
+  
+  /* כרטיס – פריסה מחדש */
+  .disp-card {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "price meta"
+      "actions actions";
+    gap: 12px;
+  }
+  
+  .disp-price {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .disp-price .num {
+    font-size: 1rem;
+  }
+  
+  /* פעולות בשורה תחתונה */
+  .disp-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* מובייל קטן מאוד */
+@media (max-width: 400px) {
+  .disp-price {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .disp-price .num {
+    font-size: 0.9rem;
+  }
+  
+  .disp-title {
+    font-size: 0.95rem;
+  }
+  
+  .dispersions-list {
+    gap: 12px;
+    padding: 12px;
+  }
+}/* ===== INVOICES = EXACT CLONE OF DISPERSIONS ===== */
+
+/* טולבר: אותו מבנה, יישור שמאל (RTL: לימין) והרחבות */
+#section-invoices .card-header .header-filters,
+.invoices-toolbar{
+  display:flex; flex-wrap:wrap; gap:12px; padding:16px;
+  background:var(--bg-surface); border-bottom:1px solid var(--border);
+  align-items:center; justify-content:flex-start;
+}
+
+/* חיפוש וכפתורים */
+#section-invoices .card-header .header-filters .search-box,
+.invoices-toolbar .search-box{ flex:1; min-width:200px; position:relative; }
+#section-invoices .card-header .header-filters .search-box input,
+.invoices-toolbar .search-box input{
+  width:100%; padding:10px 40px 10px 12px; border-radius:12px;
+  border:1px solid var(--border); background:var(--bg); font-size:.95rem;
+}
+#section-invoices .card-header .header-filters .search-box i,
+.invoices-toolbar .search-box i{
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  color:var(--text-secondary);
+}
+#section-invoices .card-header .header-filters .btn,
+.invoices-toolbar .btn{
+  white-space:nowrap; padding:10px 16px; border-radius:12px;
+  display:inline-flex; align-items:center; gap:8px; font-size:.95rem;
+}
+
+/* מבטל קו מפריד שגרם למראה אחר */
+#section-invoices hr, #section-invoices .divider{ display:none; }
+
+/* רשימה: זהה לפיזורים */
+.invoices-list, #invoicesList{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap:16px; padding:16px;
+}
+@media (max-width: 640px) {
+  .invoice-card {
+    display: grid;
+    grid-template-columns: 1fr auto; /* מידע מצד ימין, כפתור מצד שמאל */
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "meta icn"
+      "meta actions";
+    gap: 12px;
+    align-items: start;
+    position: relative;
+  }
+
+  .card-header{
+    display: block;
+  }
+
+  /* העיגול לפתיחה — קבוע למעלה בצד שמאל */
+  .invoice-card .icn {
+    grid-area: icn;
+    align-self: start;
+    justify-self: end;
+    margin-top: 4px;
+  }
+
+  /* כפתור המחיקה נשאר למטה יותר */
+  .inv-actions {
+    grid-area: actions;
+    align-self: end;
+        justify-content: flex-end;
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 8px;
+            border-top: 1px solid var(--border);
+  }
+
+  .inv-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* כרטיס: אותו גריד ואותם אפקטים */
+.invoice-card{
+  position:relative; display:grid;
+  grid-template-columns:auto 1fr auto;
+  grid-template-areas:"price meta actions";
+  gap:14px; padding:16px;
+  background:var(--bg-surface); border:1px solid var(--border);
+  border-radius:16px; transition:all .2s ease; align-items:start;
+}
+.invoice-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  border-color:var(--primary);
+}
+
+/* מעגל אייקון = כמו .disp-price */
+.invoice-card .icn{
+  grid-area:price; width:80px; height:80px; border-radius:50%;
+  background:linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.3);
+}
+.invoice-card .icn i{ font-size:1.6rem; }
+.invoice-card .icn .num{ font-size:1.1rem; font-weight:800; line-height:1.2; }
+.invoice-card .icn .lbl{ font-size:.7rem; opacity:.9; margin-top:2px; }
+
+/* מטא */
+.invoice-card .meta{
+  grid-area:meta; display:flex; flex-direction:column; gap:8px; min-width:0;
+}
+.invoice-card .meta .name{
+  font-size:1.05rem; font-weight:700; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.invoice-card .meta .sub{
+  font-size:.9rem; color:var(--text-secondary);
+  display:inline-flex; align-items:center; gap:6px;
+}
+
+/* פעולות: משכפלים 1:1 את עמודת האקשנים של הפיזורים */
+.inv-actions{
+  grid-area:actions; display:flex; flex-direction:column; gap:8px;
+}
+.inv-actions .icon-btn{
+  width:40px; height:40px; border-radius:12px; border:1px solid var(--border);
+  background:var(--bg); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .2s ease; color:var(--text);
+}
+.inv-actions .icon-btn:hover{
+  transform:scale(1.05); box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+.inv-actions .icon-btn.danger{ color:var(--error); }
+.inv-actions .icon-btn.danger:hover{
+  background:var(--error); color:#fff; border-color:var(--error);
+}
+
+/* ריספונסיביות – בדיוק כמו בפיזורים */
+@media (max-width:640px){
+  #section-invoices .card-header .header-filters,
+  .invoices-toolbar{ flex-direction:column; align-items:stretch; }
+  #section-invoices .card-header .header-filters .search-box,
+  #section-invoices .card-header .header-filters .btn,
+  .invoices-toolbar .search-box,
+  .invoices-toolbar .btn{ width:100%; }
+
+  .invoice-card{
+    grid-template-columns:auto 1fr;
+    grid-template-rows:auto auto;
+    grid-template-areas:
+      "price meta"
+      "actions actions";
+    gap:12px;
+  }
+  .invoice-card .icn{ width:70px; height:70px; }
+}
+@media (max-width:400px){
+  .invoice-card .icn{ width:60px; height:60px; }
+  .invoice-card .meta .name{ font-size:.95rem; }
+  .invoices-list, #invoicesList{ gap:12px; padding:12px; }
+}
+
+
+.card-body #invoicesList{
+  max-height: 400px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* הסקרול-בר: רק ה"קו", בלי רקע (WebKit) */
+.card-body #invoicesList::-webkit-scrollbar{ width: 8px; background: transparent; }
+.card-body #invoicesList::-webkit-scrollbar-track{ background: transparent !important; }
+.card-body #invoicesList::-webkit-scrollbar-thumb{
+  background: var(--scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.card-body #dispersionsList{
+  max-height: 400px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* הסקרול-בר: רק ה"קו", בלי רקע (WebKit) */
+.card-body #dispersionsList::-webkit-scrollbar{ width: 8px; background: transparent; }
+.card-body #dispersionsList::-webkit-scrollbar-track{ background: transparent !important; }
+.card-body #dispersionsList::-webkit-scrollbar-thumb{
+  background: var(--scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }

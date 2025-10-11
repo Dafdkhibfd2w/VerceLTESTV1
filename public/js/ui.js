@@ -79,3 +79,4 @@ function hideLoader(force = false) {
     document.body.classList.remove("loading");
   }
 }
+

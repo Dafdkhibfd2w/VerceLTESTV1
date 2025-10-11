@@ -72,11 +72,19 @@
         <h1 id="sectionTitle">דף הבית</h1>
         <p class="header-subtitle" id="sectionSubtitle">לוח בקרה וניהול</p>
       </div>
-      <div class="header-actions">
+      <div class="header-actions" style="display: flex; gap: 12px;">
+      
+      
+      
         <button class="theme-toggle">
           <i class="fas fa-moon" id="themeIcon"></i>
         </button>
-
+      
+      
+      
+<button id="refreshAllBtn" class="btn btn-outline">
+  <i class="fas fa-sync-alt" id="refreshIcon"></i>
+</button>
       </div>
     </header>
 
@@ -203,23 +211,23 @@
 <section id="section-invoices" class="section" data-feature="invoices">
   <div class="page-display">
   <div class="card">
-    <div class="card-header">
+    <div class="invoices-toolbar">
 
-<div class="header-filters" style="display: flex; gap: 12px;">
-  <button class="btn btn-primary btn-sm" id="btnUploadInvoicee">
-    <i class="fas fa-upload"></i>
-    העלה חשבונית
-  </button>
-  <input type="file" id="invoiceFileInput" accept=".pdf,image/*" hidden>
-
-  <input type="month" id="exportMonth" class="input-sm" style="margin-inline:8px;">
+            <div class="search-box">
+              <i class="fas fa-search"></i>
+              <input type="search" id="invoicesSearchInput" placeholder="חפש לפי תיאור..." />
+            </div>
+              <input type="file" id="invoiceFileInput" accept=".pdf,image/*" hidden>
   <button class="btn btn-outline btn-sm" id="btnExportInvoices">
-    <i class="fas fa-file-export"></i> ייצא לאקסל
+    <i class="fas fa-file-export"></i> ייצוא
   </button>
-  
-</div>
+      <button class="btn btn-primary btn-sm" id="btnUploadInvoicee">
+    <i class="fas fa-upload"></i>
+    חשבונית חדשה
+  </button>
 
-    </div>
+  </div>
+
     <div class="card-body">
       <div class="empty-state" id="invoicesEmpty">
         <i class="fas fa-file-invoice" style="font-size:4rem;color:var(--text-light);margin-bottom:var(--space-lg);"></i>
@@ -232,32 +240,100 @@
     </div>
   </div>
   </div>
+
 </section>
 
 
       <!-- 👥 CUSTOMERS SECTION -->
       <section id="section-dispersions" class="section" data-feature="dispersions">
         <div class="card">
-          <div class="card-header">
-            <h3>
-              <i class="fas fa-taxi"></i>
-              פיזורים
-            </h3>
+         <div class="dispersions-toolbar">
             <div class="search-box">
               <i class="fas fa-search"></i>
-              <input type="text" placeholder="חפש לקוח..." />
+              <input type="search" placeholder="חפש לפי נהג, מונית או משלם..." />
             </div>
+            <button class="btn btn-outline btn-export">
+              <i class="fas fa-file-export"></i>
+              <span>ייצוא</span>
+            </button>
+            <button class="btn btn-primary btn-add">
+              <i class="fas fa-plus"></i>
+              <span>פיזור חדש</span>
+            </button>
           </div>
-          <div class="card-body">
-            <div class="empty-state">
+
+         <div class="card-body">
+            <div class="empty-state" id="dispersionsEmpty">
               <i class="fas fa-taxi" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
               <h3>אין פיזורים עדיין</h3>
-              <p>הוסף את הלקוח הראשון שלך</p>
-              <button class="btn btn-primary mt-lg">
-                <i class="fas fa-taxi"></i>
-                הוסף לקוח
-              </button>
+              <p>הוסף את הפיזור הראשון שלך</p>
             </div>
+
+<div id="dispersionsList" class="dispersions-list" style="display:none"></div>
+<div id="dispExportModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>ייצוא פיזורים</h3>
+      <button class="modal-close" id="dispExpClose"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row same-w">
+        <label>בחר חודש:</label>
+        <input type="month" id="dispExportMonth" class="input-sm">
+      </div>
+      <div class="form-row same-w">
+        <label>בחר סוג ייצוא:</label>
+        <div class="radio-group">
+          <label class="radio">
+            <input type="radio" name="dispExpType" value="xlsx" checked>
+            <span>Excel</span>
+          </label>
+          <label class="radio">
+            <input type="radio" name="dispExpType" value="pdf">
+            <span>PDF</span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="dispExportCancel">ביטול</button>
+      <button class="btn btn-primary" id="dispExportConfirm">ייצא</button>
+    </div>
+  </div>
+</div>
+
+<div id="dispersionModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-content" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3 id="dispersionModalTitle">הוסף פיזור</h3>
+      <button class="modal-close" id="disp_close_btn"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>תאריך</label>
+        <input type="date" id="disp_date">
+      </div>
+      <div class="form-row">
+        <label>מי שילם</label>
+        <input type="text" id="disp_payer" placeholder="שם משלם">
+      </div>
+      <div class="form-row">
+        <label>מונית (נהג/חברה)</label>
+        <input type="text" id="disp_taxi" placeholder="שם נהג או חברת מוניות">
+      </div>
+      <div class="form-row">
+        <label>מחיר (₪)</label>
+        <input type="number" id="disp_price" min="0" step="0.5" inputmode="decimal" placeholder="0">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="disp_cancel">ביטול</button>
+      <button class="btn btn-primary" id="disp_submit">שמור</button>
+    </div>
+  </div>
+</div>
+
+
           </div>
         </div>
       </section>
@@ -280,10 +356,7 @@
               <i class="fas fa-building" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
               <h3>אין ספקים עדיין</h3>
               <p>הוסף את הספק הראשון שלך</p>
-              <button class="btn btn-primary mt-lg">
-                <i class="fas fa-plus"></i>
-                הוסף ספק
-              </button>
+
             </div>
           </div>
         </div>
@@ -534,6 +607,40 @@
     <div class="modal-actions">
       <button id="edit_cancel_btn">ביטול</button>
       <button id="edit_save_btn">שמור שינויים</button>
+    </div>
+  </div>
+</div>
+<!-- Export Modal -->
+<div class="modal hidden" id="exportModal">
+  <div class="modal-content small">
+    <div class="modal-header">
+      <h3>ייצוא נתונים</h3>
+      <button class="modal-close" id="exportClose"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-row">
+        <label for="exportMonthModal">בחר חודש:</label>
+        <input type="month" id="exportMonthModal" class="input-sm">
+      </div>
+
+      <div class="form-row">
+        <div class="export-options">
+          
+      <div class="form-row">
+        <label>בחר סוג ייצוא:</label>
+        <div class="export-options">
+            <label class="opt"><input type="radio" name="exportType" value="xlsx" checked> קובץ Excel</label>
+            <label class="opt"><input type="radio" name="exportType" value="pdf"> PDF מאוחד</label>
+        </div>
+      </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="exportCancel">ביטול</button>
+      <button class="btn btn-primary" id="exportConfirm">ייצא</button>
     </div>
   </div>
 </div>
