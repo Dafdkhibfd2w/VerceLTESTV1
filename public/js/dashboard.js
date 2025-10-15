@@ -5,61 +5,129 @@
   let tenantData = null;
   let currentSection = "home";
 
+  // ---------- MOBILE DETECTION ----------
+  const isMobile = () => window.innerWidth < 768;
+  const isTablet = () => window.innerWidth >= 768 && window.innerWidth < 1024;
+  const isDesktop = () => window.innerWidth >= 1024;
+
   // ---------- THEME ----------
   function updateThemeIcon(theme) {
     const icon = document.getElementById("themeIcon");
     if (!icon) return;
     icon.className = theme === "dark" ? "fas fa-sun" : "fas fa-moon";
   }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     localStorage.setItem("theme", theme);
     updateThemeIcon(theme);
     window.showToast?.(theme === "dark" ? "מצב כהה הופעל" : "מצב בהיר הופעל", "info", 1200);
   }
+
   function initTheme() {
     const saved = localStorage.getItem("theme");
     const initial = (saved === "dark" || saved === "light") ? saved : "light";
     document.documentElement.setAttribute("data-theme", initial);
     updateThemeIcon(initial);
   }
+
   function toggleTheme() {
     const cur = document.documentElement.getAttribute("data-theme") || "light";
     applyTheme(cur === "dark" ? "light" : "dark");
   }
+
   function setTheme(theme) {
     if (theme !== "light" && theme !== "dark") return;
     applyTheme(theme);
   }
 
-  // ---------- NAV ----------
-  const sectionConfig = {
-    home:      { title: "דף הבית",   subtitle: "לוח בקרה וניהול",   actionText: "חשבונית חדשה", actionIcon: "fa-plus" },
-    invoices:  { title: "חשבוניות",  subtitle: "ניהול חשבוניות",    actionText: "חשבונית חדשה", actionIcon: "fa-plus" },
-    dispersions: { title: "פיזורים",    subtitle: "ניהול פיזורים",       actionText: "הוסף פיזור",     actionIcon: "fa-user-plus" },
-    suppliers: { title: "ספקים",     subtitle: "ניהול ספקים",        actionText: "הוסף ספק",      actionIcon: "fa-plus" },
-    orders:    { title: "הזמנות",    subtitle: "ניהול הזמנות",       actionText: "הזמנה חדשה",    actionIcon: "fa-plus" },
-    reports:   { title: "דוחות",     subtitle: "דוחות וסטטיסטיקות",  actionText: "ייצא דוח",      actionIcon: "fa-download" },
-    settings:  { title: "הגדרות",    subtitle: "הגדרות מערכת",       actionText: "שמור שינויים",  actionIcon: "fa-save" }
-  };
-  const bottomNavItems = [
-    { section: "home",      label: "בית",     icon: "fa-house" },
-    { section: "invoices",  label: "חשבוניות", icon: "fa-file-invoice", feature: "invoices" },
-    { section: "dispersions", label: "פיזורים",   icon: "fa-taxi",        feature: "dispersions" },
-    { section: "suppliers", label: "ספקים",    icon: "fa-building",     feature: "suppliers" },
-    { section: "orders",    label: "הזמנות",   icon: "fa-briefcase",    feature: "orders" },
-    { section: "settings",  label: "הגדרות",   icon: "fa-gear" }
-  ];
-  function timeAgo(ts){
-    const d = new Date(ts).getTime();
-    const s = Math.floor((Date.now()-d)/1000);
-    if (s < 60) return 'הרגע';
-    const m = Math.floor(s/60); if (m < 60) return `${m} ד׳`;
-    const h = Math.floor(m/60); if (h < 24) return `${h} ש׳`;
-    const dd = Math.floor(h/24); return `${dd} ימ׳`;
+  // ---------- TOUCH FEEDBACK ----------
+  function addTouchFeedback() {
+    const touchableElements = document.querySelectorAll('.btn, .nav-tab, .card, .member, .invoice-card, .disp-card');
+    
+    touchableElements.forEach(el => {
+      el.addEventListener('touchstart', () => {
+        el.style.opacity = '0.7';
+      }, { passive: true });
+      
+      el.addEventListener('touchend', () => {
+        el.style.opacity = '1';
+      }, { passive: true });
+      
+      el.addEventListener('touchcancel', () => {
+        el.style.opacity = '1';
+      }, { passive: true });
+    });
   }
 
-  function renderAction(l){
+  // ---------- PULL TO REFRESH (Mobile) ----------
+  let pullStartY = 0;
+  let pullMoveY = 0;
+  let isPulling = false;
+
+  function initPullToRefresh() {
+    if (!isMobile()) return;
+
+    const content = document.querySelector('.content');
+    if (!content) return;
+
+    content.addEventListener('touchstart', (e) => {
+      if (content.scrollTop === 0) {
+        pullStartY = e.touches[0].clientY;
+        isPulling = true;
+      }
+    }, { passive: true });
+
+    content.addEventListener('touchmove', (e) => {
+      if (!isPulling) return;
+      
+      pullMoveY = e.touches[0].clientY;
+      const pullDistance = pullMoveY - pullStartY;
+
+      if (pullDistance > 100 && content.scrollTop === 0) {
+        // Trigger refresh
+        refreshAll();
+        isPulling = false;
+      }
+    }, { passive: true });
+
+    content.addEventListener('touchend', () => {
+      isPulling = false;
+      pullStartY = 0;
+      pullMoveY = 0;
+    }, { passive: true });
+  }
+
+  // ---------- NAV ----------
+  const sectionConfig = {
+    home:        { title: "דף הבית",   subtitle: "לוח בקרה וניהול",   actionText: "חשבונית חדשה", actionIcon: "fa-plus" },
+    invoices:    { title: "חשבוניות",  subtitle: "ניהול חשבוניות",    actionText: "חשבונית חדשה", actionIcon: "fa-plus" },
+    dispersions: { title: "פיזורים",    subtitle: "ניהול פיזורים",       actionText: "הוסף פיזור",     actionIcon: "fa-user-plus" },
+    suppliers:   { title: "ספקים",     subtitle: "ניהול ספקים",        actionText: "הוסף ספק",      actionIcon: "fa-plus" },
+    orders:      { title: "הזמנות",    subtitle: "ניהול הזמנות",       actionText: "הזמנה חדשה",    actionIcon: "fa-plus" },
+    reports:     { title: "דוחות",     subtitle: "דוחות וסטטיסטיקות",  actionText: "ייצא דוח",      actionIcon: "fa-download" },
+    settings:    { title: "הגדרות",    subtitle: "הגדרות מערכת",       actionText: "שמור שינויים",  actionIcon: "fa-save" }
+  };
+
+  const bottomNavItems = [
+    { section: "home",        label: "בית",     icon: "fa-house" },
+    { section: "invoices",    label: "חשבוניות", icon: "fa-file-invoice", feature: "invoices" },
+    { section: "dispersions", label: "פיזורים",   icon: "fa-taxi",        feature: "dispersions" },
+    { section: "suppliers",   label: "ספקים",    icon: "fa-building",     feature: "suppliers" },
+    { section: "orders",      label: "הזמנות",   icon: "fa-briefcase",    feature: "orders" },
+    { section: "settings",    label: "הגדרות",   icon: "fa-gear" }
+  ];
+
+  function timeAgo(ts) {
+    const d = new Date(ts).getTime();
+    const s = Math.floor((Date.now() - d) / 1000);
+    if (s < 60) return 'הרגע';
+    const m = Math.floor(s / 60); if (m < 60) return `${m} דק'`;
+    const h = Math.floor(m / 60); if (h < 24) return `${h} שע'`;
+    const dd = Math.floor(h / 24); return `${dd} ימ'`;
+  }
+
+  function renderAction(l) {
     const t = l?.target?.label || l?.target?.email || l?.target?.id || '';
     const by = (l?.actor?.name || l?.actor?.email || 'משתמש');
     const map = {
@@ -71,10 +139,10 @@
     return map[l.action] || `${by} · ${escapeHtml(l.action)}${t ? ' · ' + escapeHtml(t) : ''}`;
   }
 
-  function renderLogs(items){
+  function renderLogs(items) {
     const wrap = document.getElementById('logsList');
     if (!wrap) return;
-    if (!items.length){
+    if (!items.length) {
       wrap.innerHTML = `<div class="empty">אין פעילות אחרונה</div>`;
       return;
     }
@@ -87,13 +155,13 @@
     `).join('');
   }
 
-  async function loadLogs(){
-    try{
+  async function loadLogs() {
+    try {
       const r = await fetch('/api/logs?limit=30', { credentials: 'include' });
       const data = await r.json();
       if (!data?.ok) throw 0;
       renderLogs(data.logs || []);
-    }catch(e){
+    } catch (e) {
       renderLogs([]);
     }
   }
@@ -113,6 +181,7 @@
           <span>${item.label}</span>
         </button>`;
     }).join("");
+    
     el.querySelectorAll(".nav-tab").forEach(btn => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -126,6 +195,7 @@
       });
     });
   }
+
   function applyBottomNavGates() {
     const el = document.getElementById("bottomNav");
     if (!el) return;
@@ -139,6 +209,7 @@
       btn.setAttribute("aria-disabled", String(!on));
     });
   }
+
   function setActiveNav(sectionName) {
     document.querySelectorAll(".nav-item").forEach(item => {
       item.classList.toggle("active", item.getAttribute("data-section") === sectionName);
@@ -150,12 +221,14 @@
       else btn.removeAttribute("aria-current");
     });
   }
+
   function updateHeaderForSection(sectionName) {
     const cfg = sectionConfig[sectionName] || sectionConfig.home;
     const titleEl = document.getElementById("sectionTitle");
     const subEl = document.getElementById("sectionSubtitle");
     const actionBtn = document.getElementById("primaryActionBtn");
     const actionText = document.getElementById("primaryActionText");
+    
     if (titleEl) titleEl.textContent = cfg.title;
     if (subEl) subEl.textContent = cfg.subtitle;
     if (actionText) actionText.textContent = cfg.actionText;
@@ -165,6 +238,7 @@
       actionBtn.dataset.section = sectionName;
     }
   }
+
   function navigateToSection(sectionName) {
     const el = document.getElementById(`section-${sectionName}`);
     if (el && el.matches('[data-feature].disabled')) {
@@ -172,17 +246,25 @@
       location.hash = "#home";
       return;
     }
+    
+    // Scroll to top on mobile when changing sections
+    if (isMobile()) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
     document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
     if (el) el.classList.add("active");
     setActiveNav(sectionName);
     updateHeaderForSection(sectionName);
     currentSection = sectionName;
   }
+
   function handleHashRoute() {
     const raw = (location.hash || "#home").slice(1);
     const section = sectionConfig[raw] ? raw : "home";
     navigateToSection(section);
   }
+
   function bindNavEvents() {
     document.querySelectorAll(".nav-item").forEach(item => {
       item.addEventListener("click", (e) => {
@@ -207,25 +289,24 @@
     } catch {}
     setUserUI({ username: "אורח", role: "user" });
   }
+
   function setUserUI(user) {
     const nameEl = document.getElementById("currentUserName");
     const roleEl = document.getElementById("currentUserRole");
     if (nameEl) nameEl.textContent = user.username || user.name || "משתמש";
     if (roleEl) roleEl.textContent = user.role || "משתמש";
   }
+
   async function loadTenant() {
     try {
-      // שמור הזמנות קיימות כדי שלא ייעלמו עד שהזמן נשלף מחדש
       const oldInvites = tenantData?.invites || [];
-
       const res = await fetch("/api/tenant/info", { credentials: "include" });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data?.ok) {
           tenantData = normalizeTenant(data);
-          // החזר את ההזמנות ששמרנו (loadInvites יעדכן אותן מאוחר יותר)
           tenantData.invites = oldInvites;
-          renderTenant();       // renderTenant משתמש ב-getCombinedTeam
+          renderTenant();
           applyFeatureGates();
           return;
         }
@@ -234,7 +315,6 @@
       console.error("loadTenant error:", e);
     }
 
-    // fallback בטוח שלא מוחק הזמנות קיימות
     tenantData = {
       name: "העסק שלי",
       createdAt: new Date().toISOString(),
@@ -250,10 +330,7 @@
   function normalizeTenant(payload) {
     const t = payload?.tenant || {};
     const owner = payload?.owner || null;
-    const teamRaw =
-      payload?.teamMembers ||
-      payload?.members ||
-      payload?.team || [];
+    const teamRaw = payload?.teamMembers || payload?.members || payload?.team || [];
     const team = Array.isArray(teamRaw) ? teamRaw : [];
     const feats = t.features || {};
 
@@ -267,10 +344,9 @@
       address: t.settings?.address || "",
       phone: t.settings?.phone || "",
       team: team.map(m => {
-        const roleFromMembership =
-          (m.memberships || []).find(mm =>
-            String(mm.tenant) === String(t.id || t._id)
-          )?.role;
+        const roleFromMembership = (m.memberships || []).find(mm =>
+          String(mm.tenant) === String(t.id || t._id)
+        )?.role;
         return {
           id: m.id || m._id,
           name: m.name || "",
@@ -286,57 +362,53 @@
   function renderTenant() {
     if (!tenantData) return;
 
-    const teamArr    = Array.isArray(tenantData.team)    ? tenantData.team    : [];
+    const teamArr = Array.isArray(tenantData.team) ? tenantData.team : [];
     const invitesArr = Array.isArray(tenantData.invites) ? tenantData.invites : [];
-    const combined   = getCombinedTeam(teamArr, invitesArr, tenantData.id);
+    const combined = getCombinedTeam(teamArr, invitesArr, tenantData.id);
 
-    // כותרות ושדות כלליים
-    const nameMain     = document.getElementById("tenantName");
-    const nameSidebar  = document.getElementById("tenantNameSidebar");
-    const createdEl    = document.getElementById("tenantCreated");
-    const ownerNameEl  = document.getElementById("ownerName");
+    const nameMain = document.getElementById("tenantName");
+    const nameSidebar = document.getElementById("tenantNameSidebar");
+    const createdEl = document.getElementById("tenantCreated");
+    const ownerNameEl = document.getElementById("ownerName");
     const ownerEmailEl = document.getElementById("ownerEmail");
 
-    if (nameMain)    nameMain.textContent = tenantData.name || "העסק שלי";
+    if (nameMain) nameMain.textContent = tenantData.name || "העסק שלי";
     if (nameSidebar) nameSidebar.textContent = tenantData.name || "העסק שלי";
-    if (createdEl)   createdEl.textContent = formatDate(tenantData.createdAt);
+    if (createdEl) createdEl.textContent = formatDate(tenantData.createdAt);
     if (ownerNameEl) ownerNameEl.textContent = tenantData.ownerName || "—";
     if (ownerEmailEl) ownerEmailEl.textContent = tenantData.ownerEmail || "—";
 
-    // רנדר הרשימה המשולבת
     renderTeamList(combined);
-
-    // מונה עובדים
+    const invCount = document.getElementById("inviteCount");
     const teamCount = document.getElementById("teamCount");
     if (teamCount) teamCount.textContent = String(combined.length);
-
-    // מילוי טופסי הגדרות (ללא דריסה בזמן עריכה)
-    const sName  = document.getElementById("settingsTenantName");
-    const sAddr  = document.getElementById("settingsAddress");
+    if (invCount) invCount.textContent = String(invitesArr.length);
+    const sName = document.getElementById("settingsTenantName");
+    const sAddr = document.getElementById("settingsAddress");
     const sPhone = document.getElementById("settingsPhone");
-    if (sName  && document.activeElement !== sName)  sName.value  = tenantData.name || "";
-    if (sAddr  && document.activeElement !== sAddr)  sAddr.value  = tenantData.address || "";
+    if (sName && document.activeElement !== sName) sName.value = tenantData.name || "";
+    if (sAddr && document.activeElement !== sAddr) sAddr.value = tenantData.address || "";
     if (sPhone && document.activeElement !== sPhone) sPhone.value = tenantData.phone || "";
   }
 
   // ---------- TEAM LIST ----------
-  function initials(name='') {
+  function initials(name = '') {
     const parts = String(name).trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
+
   function memberItemTemplate(m) {
     const role = (m.role || 'employee').toLowerCase();
     const roleLabel =
-      role === 'owner'         ? 'בעלים'  :
-      role === 'manager'       ? 'מנהל'   :
-      role === 'shift_manager' ? 'אחמ״ש'  :
-                                  'עובד';
+      role === 'owner' ? 'בעלים' :
+      role === 'manager' ? 'מנהל' :
+      role === 'shift_manager' ? 'אחמ״ש' :
+      'עובד';
 
-    const statusLabel =
-      m.status === 'pending'
-        ? '<span class="pending">בהמתנה לאישור</span>'
-        : '';
+    const statusLabel = m.status === 'pending'
+      ? '<span class="pending">בהמתנה לאישור</span>'
+      : '';
 
     const isOwner = role === 'owner';
     const isInvite = m.type === 'invite';
@@ -352,8 +424,7 @@
         <div class="meta">
           <span class="role ${role}">${roleLabel}</span>
           <div class="actions">
-            ${isOwner ? '' : isInvite ? `
-            ` : `
+            ${isOwner ? '' : isInvite ? '' : `
               <button class="icon-btn danger" title="מחק" data-action="delete"><i class="fas fa-trash"></i></button>
               <button class="icon-btn primary" title="ערוך" data-action="edit"><i class="fas fa-pen"></i></button>
             `}
@@ -370,7 +441,7 @@
       return;
     }
     wrap.innerHTML = team.map(memberItemTemplate).join('');
-    // Delegation לכפתורי עריכה/מחיקה
+    
     wrap.onclick = (e) => {
       const btn = e.target.closest('.icon-btn');
       if (!btn) return;
@@ -382,35 +453,40 @@
         return;
       }
       const member = (tenantData?.team || []).find(m => String(m.id) === String(memberId))
-                || (tenantData?.team || []).find(m => m.email === row?.querySelector('.email bdi')?.textContent);
+        || (tenantData?.team || []).find(m => m.email === row?.querySelector('.email bdi')?.textContent);
 
       if (action === 'edit') openEditMemberModal(member);
       if (action === 'delete') confirmDeleteMember(memberId, row);
     };
   }
 
-  // === Add Member Modal logic ===
-  function openAddMemberModal(){
+  // === Add Member Modal ===
+  function openAddMemberModal() {
     const m = document.getElementById('addMemberModal');
     if (!m) return;
     document.getElementById('addMemberForm').reset();
     m.classList.remove('hidden');
     document.body.classList.add('modal-open');
-    setTimeout(()=> document.getElementById('am_name')?.focus(), 50);
+    setTimeout(() => document.getElementById('am_name')?.focus(), 50);
   }
-  function closeAddMemberModal(){
+
+  function closeAddMemberModal() {
     const m = document.getElementById('addMemberModal');
     if (!m) return;
     m.classList.add('hidden');
     document.body.classList.remove('modal-open');
   }
-  async function createMember(){
+
+  async function createMember() {
     const btn = document.getElementById('am_submit');
     const email = (document.getElementById('am_email')?.value || '').trim();
-    const role  = (document.getElementById('am_role')?.value || 'employee');
+    const role = (document.getElementById('am_role')?.value || 'employee');
     const sendInvite = !!document.getElementById('am_sendInvite')?.checked;
 
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) { showToast?.('אימייל לא תקין', 'warning'); return; }
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      showToast?.('אימייל לא תקין', 'warning');
+      return;
+    }
 
     btn.disabled = true;
     try {
@@ -422,19 +498,19 @@
         headers: { 'Content-Type': 'application/json', 'x-csrf-token': csrf },
         body: JSON.stringify({ email, role, sendInvite })
       });
-      const data = await res.json().catch(()=> ({}));
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
 
       closeAddMemberModal();
       showToast?.('ההזמנה נשלחה', 'success');
-      (async function initTeam(){
+      (async function initTeam() {
         try {
-          await loadInvites?.();  // חדש
-        } catch(e) {
+          await loadInvites?.();
+        } catch (e) {
           console.error(e);
         }
       })();
-    } catch (e){
+    } catch (e) {
       showToast?.(e?.message || 'שגיאה בשליחת ההזמנה', 'error');
     } finally {
       btn.disabled = false;
@@ -443,23 +519,34 @@
 
   document.getElementById('btnAddMember')?.addEventListener('click', openAddMemberModal);
   document.querySelector('#addMemberModal .modal-close')?.addEventListener('click', closeAddMemberModal);
-  document.querySelector('#addMemberModal .modal-cancel')?.addEventListener('click', (e)=>{ e.preventDefault(); closeAddMemberModal(); });
-  document.getElementById('am_submit')?.addEventListener('click', (e)=>{ e.preventDefault(); createMember(); });
+  document.querySelector('#addMemberModal .modal-cancel')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeAddMemberModal();
+  });
+  document.getElementById('am_submit')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    createMember();
+  });
 
-  // === Edit Member Modal (inline) ===
+  // === Edit Member Modal ===
   let editingMemberId = null;
+
   function openEditMemberModal(member) {
     editingMemberId = member.id || member._id;
     document.getElementById("edit_name").value = member.name || "";
     document.getElementById("edit_role").value = (member.role || "employee");
     document.getElementById("edit_status").value = member.status || "active";
-    document.getElementById("edit_role").disabled = (member.role === 'owner'); // אופציונלי
+    document.getElementById("edit_role").disabled = (member.role === 'owner');
     document.getElementById("editMemberModal").classList.remove("hidden");
+    document.body.classList.add('modal-open');
   }
+
   function closeEditMemberModal() {
     editingMemberId = null;
     document.getElementById("editMemberModal").classList.add("hidden");
+    document.body.classList.remove('modal-open');
   }
+
   async function saveEditedMember() {
     const name = document.getElementById("edit_name").value.trim();
     const role = document.getElementById("edit_role").value;
@@ -474,6 +561,7 @@
       });
       const data = await res.json();
       if (!res.ok || data.ok === false) throw new Error(data.message || `HTTP ${res.status}`);
+      
       const idx = (tenantData?.team || []).findIndex(m => String(m.id) === String(editingMemberId));
       if (idx !== -1) {
         tenantData.team[idx] = {
@@ -492,16 +580,19 @@
     }
   }
 
-  // מחיקה (אם יש לך ראוט מתאים בצד שרת)
-  async function confirmDeleteMember(id, rowEl){
+  async function confirmDeleteMember(id, rowEl) {
     if (!confirm('למחוק משתמש זה?')) return;
     try {
       const csrf = await getCsrfToken();
-      const res = await fetch(`/api/users/${id}`, { method:'DELETE', credentials:'include', headers:{'x-csrf-token':csrf} });
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'x-csrf-token': csrf }
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       rowEl?.remove();
       showToast?.('נמחק בהצלחה', 'success');
-    } catch(e){
+    } catch (e) {
       showToast?.(e.message || 'שגיאה במחיקה', 'error');
     }
   }
@@ -531,6 +622,7 @@
     el.classList.remove("hidden");
     document.body.classList.add("modal-open");
   }
+
   function closeEditModal() {
     const el = document.getElementById("editModal");
     if (!el) return;
@@ -542,34 +634,49 @@
   function handlePrimaryAction(section) {
     switch (section) {
       case "home":
-      case "invoices":  window.showToast?.("פתיחת חשבונית חדשה", "info"); break;
+      case "invoices": window.showToast?.("פתיחת חשבונית חדשה", "info"); break;
       case "dispersions": window.showToast?.("הוספת פיזור", "info"); break;
       case "suppliers": window.showToast?.("הוספת ספק", "info"); break;
-      case "orders":    window.showToast?.("יצירת הזמנה חדשה", "info"); break;
-      case "reports":   window.showToast?.("ייצוא דוח...", "success"); break;
-      case "settings":  window.showToast?.("נשמרו שינויים", "success"); break;
-      default:          window.showToast?.("פעולה ראשית", "info");
+      case "orders": window.showToast?.("יצירת הזמנה חדשה", "info"); break;
+      case "reports": window.showToast?.("ייצוא דוח...", "success"); break;
+      case "settings": window.showToast?.("נשמרו שינויים", "success"); break;
+      default: window.showToast?.("פעולה ראשית", "info");
     }
   }
+
   async function logout() {
-    try { await fetch("/logout", { method: "GET", credentials: "include" }); } catch {}
+    try {
+      await fetch("/logout", { method: "GET", credentials: "include" });
+    } catch {}
     location.href = "/login";
   }
 
   // ---------- HELPERS ----------
   function formatDate(dateStr) {
-    try { return new Date(dateStr).toLocaleDateString("he-IL", { year: "numeric", month: "2-digit", day: "2-digit" }); }
-    catch { return "—"; }
-  }
-  function escapeHtml(s) {
-    return String(s || "")
-      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    try {
+      return new Date(dateStr).toLocaleDateString("he-IL", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+    } catch {
+      return "—";
+    }
   }
 
-  // ---------- Loader (CSP-safe) ----------
+  function escapeHtml(s) {
+    return String(s || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // ---------- Loader ----------
   const delay = (ms) => new Promise(r => setTimeout(r, ms));
   const nextFrame = () => new Promise(r => requestAnimationFrame(() => r()));
+
   async function waitForImages(scope = document) {
     const imgs = [...scope.querySelectorAll('img')].filter(img => !img.complete);
     if (!imgs.length) return;
@@ -578,12 +685,20 @@
       img.addEventListener('error', res, { once: true });
     })));
   }
+
   async function flushUI(scope = document) {
     const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
     await Promise.all([fontsReady, waitForImages(scope)]);
-    await nextFrame(); await nextFrame();
+    await nextFrame();
+    await nextFrame();
   }
-  async function withLoader(run, { text="טוען...", subtext="מביא נתונים", scopeSelector=".main-content", minShow=300 } = {}) {
+
+  async function withLoader(run, {
+    text = "טוען...",
+    subtext = "מביא נתונים",
+    scopeSelector = ".main-content",
+    minShow = 300
+  } = {}) {
     showLoader(text, subtext);
     const t0 = performance.now();
     try {
@@ -593,7 +708,9 @@
       const elapsed = performance.now() - t0;
       if (elapsed < minShow) await delay(minShow - elapsed);
       return result;
-    } finally { hideLoader(); }
+    } finally {
+      hideLoader();
+    }
   }
 
   // ---------- CSRF / PUT helpers ----------
@@ -603,6 +720,7 @@
     if (!j?.csrfToken) throw new Error("CSRF token missing");
     return j.csrfToken;
   }
+
   async function putJSON(url, body) {
     const csrf = await getCsrfToken();
     const res = await fetch(url, {
@@ -614,7 +732,9 @@
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.ok === false) {
       const msg = data?.message || `HTTP ${res.status}`;
-      const err = new Error(msg); err.status = res.status; err.data = data;
+      const err = new Error(msg);
+      err.status = res.status;
+      err.data = data;
       throw err;
     }
     return data;
@@ -622,25 +742,37 @@
 
   // ---------- SETTINGS SAVE ----------
   async function saveBusinessSettings() {
-    const name  = (document.getElementById("settingsTenantName")?.value || "").trim();
-    const addr  = (document.getElementById("settingsAddress")?.value || "").trim();
+    const name = (document.getElementById("settingsTenantName")?.value || "").trim();
+    const addr = (document.getElementById("settingsAddress")?.value || "").trim();
     const phone = (document.getElementById("settingsPhone")?.value || "").trim();
+    
     await withLoader(async () => {
-      const resp = await putJSON("/api/tenant/update", { name, settings: { address: addr, phone } });
-      tenantData.name    = resp?.tenant?.name || name;
+      const resp = await putJSON("/api/tenant/update", {
+        name,
+        settings: { address: addr, phone }
+      });
+      tenantData.name = resp?.tenant?.name || name;
       tenantData.address = resp?.tenant?.settings?.address || addr;
-      tenantData.phone   = resp?.tenant?.settings?.phone   || phone;
+      tenantData.phone = resp?.tenant?.settings?.phone || phone;
       renderTenant();
-    }, { text: "שומר הגדרות...", subtext: "מעדכן את פרטי העסק בשרת" })
+    }, {
+      text: "שומר הגדרות...",
+      subtext: "מעדכן את פרטי העסק בשרת"
+    })
     .then(() => window.showToast?.("העסק עודכן בהצלחה", "success"))
     .catch(err => {
       if (err?.status === 403) window.showToast?.("אין לך הרשאה לעדכן את העסק", "error");
       else window.showToast?.(err?.message || "שגיאה בעדכון העסק", "error");
     });
   }
+
   async function savePersonalSettings() {
     const newName = (document.getElementById("settingsUserName")?.value || "").trim();
-    if (!newName) { window.showToast?.("יש להזין שם מלא", "warning"); return; }
+    if (!newName) {
+      window.showToast?.("יש להזין שם מלא", "warning");
+      return;
+    }
+    
     await withLoader(async () => {
       const csrf = await getCsrfToken();
       const res = await fetch("/api/user/update", {
@@ -651,139 +783,46 @@
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
-      setUserUI({ username: data.user?.name || newName, role: document.getElementById("currentUserRole")?.textContent || "משתמש" });
+      
+      setUserUI({
+        username: data.user?.name || newName,
+        role: document.getElementById("currentUserRole")?.textContent || "משתמש"
+      });
       return data;
-    }, { text: "שומר פרטים אישיים...", subtext: "מעדכן את הפרופיל שלך" })
+    }, {
+      text: "שומר פרטים אישיים...",
+      subtext: "מעדכן את הפרופיל שלך"
+    })
     .then(() => window.showToast?.("הפרופיל עודכן בהצלחה", "success"))
     .catch(err => window.showToast?.(err?.message || "שגיאה בעדכון הפרופיל", "error"));
   }
+
   async function saveTenantChanges() {
-    const name  = (document.getElementById("editTenantName")?.value || "").trim();
-    const addr  = (document.getElementById("editTenantAddress")?.value || "").trim();
+    const name = (document.getElementById("editTenantName")?.value || "").trim();
+    const addr = (document.getElementById("editTenantAddress")?.value || "").trim();
     const phone = (document.getElementById("editTenantPhone")?.value || "").trim();
+    
     await withLoader(async () => {
-      const resp = await putJSON("/api/tenant/update", { name, settings: { address: addr, phone } });
-      tenantData.name    = resp?.tenant?.name || name;
+      const resp = await putJSON("/api/tenant/update", {
+        name,
+        settings: { address: addr, phone }
+      });
+      tenantData.name = resp?.tenant?.name || name;
       tenantData.address = resp?.tenant?.settings?.address || addr;
-      tenantData.phone   = resp?.tenant?.settings?.phone   || phone;
+      tenantData.phone = resp?.tenant?.settings?.phone || phone;
       renderTenant();
-    }, { text: "שומר שינויים...", subtext: "מעדכן את פרטי העסק" })
-    .then(() => { closeEditModal(); window.showToast?.("פרטי העסק נשמרו", "success"); })
+    }, {
+      text: "שומר שינויים...",
+      subtext: "מעדכן את פרטי העסק"
+    })
+    .then(() => {
+      closeEditModal();
+      window.showToast?.("פרטי העסק נשמרו", "success");
+    })
     .catch(err => window.showToast?.(err?.message || "שגיאה בעדכון", "error"));
   }
 
-  // ---------- INIT ----------
-  document.addEventListener("DOMContentLoaded", async () => {
-    initTheme();
-
-    await withLoader(async () => {
-      // --- 1) /me ---
-      const meRes = await fetch("/me", { credentials: "include" });
-      if (meRes.status === 401 || meRes.status === 403) { location.href = "/login"; return; }
-
-      const me = await meRes.json().catch(() => ({}));
-      const meUser = me?.user || null;
-      setUserUI(meUser || { username: "אורח", role: "user" });
-
-      // מילוי שדות רק אם יש user
-      if (meUser) {
-        const uNameEl = document.getElementById("settingsUserName");
-        const uMailEl = document.getElementById("settingsEmail");
-        if (uNameEl && !uNameEl.value) uNameEl.value = meUser.name || "";
-        if (uMailEl && !uMailEl.value) uMailEl.value = meUser.email || "";
-      }
-
-      // --- 2) /api/tenant/info ---
-      const infoRes = await fetch("/api/tenant/info", { credentials: "include" });
-      if (infoRes.status === 401 || infoRes.status === 403) { location.href = "/login"; return; }
-
-      let data = {};
-      try { data = await infoRes.json(); } catch { data = {}; }
-
-      if (infoRes.ok && data?.ok && data?.tenant) {
-        tenantData = normalizeTenant(data);
-      } else {
-        window.showToast?.(data?.message || "שגיאה בטעינת נתוני העסק", "warning");
-        tenantData = {
-          name: "העסק שלי",
-          createdAt: new Date().toISOString(),
-          settings: {},
-          features: {},
-          teamMembers: []
-        };
-      }
-
-      // --- 3) המשך אתחול המסכים ---
-      renderTenant();
-      await loadLogs().catch(() => {});
-      await loadInvites().catch(() => renderInvites([]));
-      setInterval(() => loadLogs().catch(() => {}), 60_000);
-
-      applyFeatureGates();
-      renderBottomNav();
-      applyBottomNavGates();
-      bindNavEvents();
-      handleHashRoute();
-
-      // קריאות init לפיצ'רים רק אחרי שיש tenantData + gates
-      if (tenantData?.features?.dispersions) {
-        await initDispersionsUI();
-      }
-
-      const primaryActionBtn = document.getElementById("primaryActionBtn");
-      if (primaryActionBtn) {
-        primaryActionBtn.addEventListener("click", () => {
-          const s = primaryActionBtn.dataset.section || currentSection;
-          handlePrimaryAction(s);
-        });
-      }
-
-      document.querySelector(".theme-toggle")?.addEventListener("click", toggleTheme);
-      const themeOpts = document.querySelectorAll(".theme-options .theme-option");
-      if (themeOpts[0]) themeOpts[0].addEventListener("click", () => setTheme("light"));
-      if (themeOpts[1]) themeOpts[1].addEventListener("click", () => setTheme("dark"));
-      document.querySelector(".btn-logout")?.addEventListener("click", logout);
-
-      // מודאל עריכת עסק
-      document.getElementById("editTenantBtn")?.addEventListener("click", openEditModal);
-      document.querySelector("#editModal .modal-close")?.addEventListener("click", closeEditModal);
-      document.querySelector("#editModal .modal-footer .btn.btn-primary")
-        ?.addEventListener("click", saveTenantChanges);
-
-      // שמירת הגדרות
-      document.querySelector("#section-settings .card:nth-of-type(1) .btn.btn-primary")
-        ?.addEventListener("click", saveBusinessSettings);
-      document.querySelector("#section-settings .card:nth-of-type(2) .btn.btn-primary")
-        ?.addEventListener("click", savePersonalSettings);
-    }, {
-      text: "טוען לוח בקרה...",
-      subtext: "מביא נתונים מהשרת",
-      scopeSelector: ".main-content",
-      minShow: 300
-    });
-  });
-
-  (function hookEditMemberModalEvents() {
-    const saveBtn   = document.getElementById('edit_save_btn');
-    const cancelBtn = document.getElementById('edit_cancel_btn');
-    const modalEl   = document.getElementById('editMemberModal');
-
-    if (saveBtn)   saveBtn.addEventListener('click', saveEditedMember);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeEditMemberModal);
-    if (modalEl)   modalEl.addEventListener('click', (e) => {
-      if (e.target.id === 'editMemberModal') closeEditMemberModal(); // קליק על רקע
-    });
-
-    // בריחה עם ESC
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeEditMemberModal();
-    });
-  })();
-
-  // ==============================
-  //      INVOICES – UI
-  // ==============================
-  // (נשאר כפי שהיה)
+  // ========== INVOICES ==========
   document.addEventListener('DOMContentLoaded', () => {
     initInvoicesUI();
   });
@@ -792,18 +831,14 @@
     const sec = document.querySelector('#section-invoices');
     if (!sec) return;
 
-    // מודאל פעם אחת
     ensureUploadInvoiceModal();
 
-    // כפתור "העלה חשבונית" פותח מודאל
     document.getElementById('btnUploadInvoicee')?.addEventListener('click', (e) => {
       e.preventDefault();
       openUploadInvoiceModal();
     });
 
-    // חיפוש לפי תיאור
-    const header =
-      sec.querySelector('.invoices-toolbar') ||
+    const header = sec.querySelector('.invoices-toolbar') ||
       sec.querySelector('.card-header .header-filters') ||
       sec.querySelector('.card-header');
 
@@ -813,7 +848,12 @@
       input.addEventListener('input', e => onSearch(e.target.value));
       input.__wired = true;
     }
-    try { await loadInvoices(''); } catch(e){ console.error(e); }
+    
+    try {
+      await loadInvoices('');
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   function ensureUploadInvoiceModal() {
@@ -836,7 +876,7 @@
           </div>
           <div class="form-row">
             <label>תיאור (חובה)</label>
-            <input type="text" id="inv_desc" placeholder="לדוגמה: חשבונית מס #1024 - לקוח כהן">
+            <input type="text" id="inv_desc" placeholder="לדוגמא: חשבונית מס #1024 - לקוח כהן">
           </div>
         </div>
         <div class="modal-footer">
@@ -847,13 +887,13 @@
     `;
     document.body.appendChild(modal);
 
-    // מאזינים
     document.getElementById('inv_close_btn').onclick = closeUploadInvoiceModal;
-    document.getElementById('inv_cancel').onclick    = closeUploadInvoiceModal;
-    document.getElementById('inv_submit').onclick    = onSubmitUpload;
-    modal.addEventListener('click', (e) => { if (e.target.id === 'uploadInvoiceModal') closeUploadInvoiceModal(); });
+    document.getElementById('inv_cancel').onclick = closeUploadInvoiceModal;
+    document.getElementById('inv_submit').onclick = onSubmitUpload;
+    modal.addEventListener('click', (e) => {
+      if (e.target.id === 'uploadInvoiceModal') closeUploadInvoiceModal();
+    });
 
-    // פידבק כשנבחר קובץ
     modal.querySelector('#inv_file').addEventListener('change', (e) => {
       const f = e.target.files?.[0];
       if (f) showToast?.(`נבחר: ${f.name}`, 'info', 900);
@@ -866,6 +906,7 @@
     document.getElementById('uploadInvoiceModal').classList.remove('hidden');
     document.body.classList.add('modal-open');
   }
+
   function closeUploadInvoiceModal() {
     document.getElementById('uploadInvoiceModal').classList.add('hidden');
     document.body.classList.remove('modal-open');
@@ -874,15 +915,21 @@
   async function onSubmitUpload(e) {
     e?.preventDefault?.();
 
-    const modal  = document.getElementById('uploadInvoiceModal');
+    const modal = document.getElementById('uploadInvoiceModal');
     const fileEl = modal?.querySelector('#inv_file');
     const descEl = modal?.querySelector('#inv_desc');
 
-    const f    = fileEl?.files?.[0] || null;
+    const f = fileEl?.files?.[0] || null;
     const desc = (descEl?.value || '').trim();
 
-    if (!f)    { showToast?.('לא נבחר קובץ', 'warning'); return; }
-    if (!desc) { showToast?.('יש להזין תיאור לחשבונית', 'warning'); return; }
+    if (!f) {
+      showToast?.('לא נבחר קובץ', 'warning');
+      return;
+    }
+    if (!desc) {
+      showToast?.('יש להזין תיאור לחשבונית', 'warning');
+      return;
+    }
 
     try {
       const csrf = await getCsrfToken();
@@ -894,10 +941,10 @@
       const res = await fetch('/api/invoices/upload', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'x-csrf-token': csrf }, // לא לשים Content-Type ידנית
+        headers: { 'x-csrf-token': csrf },
         body: fd
       });
-      const data = await res.json().catch(()=> ({}));
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
 
       await loadInvoices('');
@@ -909,8 +956,7 @@
     }
   }
 
-  // חיפוש/רשימה
-  async function loadInvoices(query='') {
+  async function loadInvoices(query = '') {
     const listBox = document.getElementById('invoicesList');
     const emptyBox = document.getElementById('invoicesEmpty');
     if (!listBox || !emptyBox) return;
@@ -920,8 +966,8 @@
       ? `/api/invoices/search?q=${encodeURIComponent(query.trim())}`
       : `/api/invoices/list`;
 
-    const res  = await fetch(url, { credentials: 'include' });
-    const data = await res.json().catch(()=> ({}));
+    const res = await fetch(url, { credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
 
     const arr = data.items || data.invoices || [];
@@ -935,30 +981,36 @@
     listBox.style.display = '';
   }
 
-  function renderInvoices(items=[]) {
+  function renderInvoices(items = []) {
     const listBox = document.getElementById('invoicesList');
     if (!listBox) return;
     listBox.innerHTML = items.map(invoiceCardTemplate).join('');
   }
+
   function formatBytes(bytes) {
     const n = Number(bytes);
     if (!Number.isFinite(n) || n < 0) return '—';
-    const units = ['B','KB','MB','GB','TB'];
-    let i = 0, val = n;
-    while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0,
+      val = n;
+    while (val >= 1024 && i < units.length - 1) {
+      val /= 1024;
+      i++;
+    }
     const num = val >= 100 || i === 0 ? Math.round(val) : val.toFixed(1);
     return `${num} ${units[i]}`;
   }
 
   function invoiceCardTemplate(inv) {
-    const id    = inv.id || inv._id;
-    const name  = inv.title || inv.name || '';
-    const at    = inv.createdAt || inv.uploadedAt || new Date().toISOString();
-    const url   = inv.file?.url || inv.url;
-    const isPdf = (inv.mimetype||'').includes('pdf') || /\.pdf$/i.test(inv.originalname||'');
-    const desc  = inv.description || '';
+    const id = inv.id || inv._id;
+    const name = inv.title || inv.name || '';
+    const at = inv.createdAt || inv.uploadedAt || new Date().toISOString();
+    const url = inv.file?.url || inv.url;
+    const isPdf = (inv.mimetype || '').includes('pdf') || /\.pdf$/i.test(inv.originalname || '');
+    const desc = inv.description || '';
     const uploader = inv.username || inv.uploadedByN || inv.uploadedBy?.name || inv.uploadedBy?.email || inv.uploader || 'לא ידוע';
-    const size  = inv.size || inv.file?.bytes || 0;
+    const size = inv.size || inv.file?.bytes || 0;
+    
     return `
     <div class="invoice-card" data-id="${id}">
       <a class="icn-link" style='text-decoration: none;' href="${url ? url : '#'}" ${url ? 'target="_blank" rel="noopener"' : ''}>
@@ -983,8 +1035,14 @@
     </div>`;
   }
 
-  function debounce(fn,ms=250){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms);};}
-  // מחיקת חשבונית מה־UI
+  function debounce(fn, ms = 250) {
+    let t;
+    return (...a) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...a), ms);
+    };
+  }
+
   document.getElementById('invoicesList')?.addEventListener('click', async (e) => {
     const btn = e.target.closest('.btn-del-invoice');
     if (!btn) return;
@@ -1002,16 +1060,14 @@
         credentials: 'include',
         headers: { 'x-csrf-token': csrf }
       });
-      const data = await res.json().catch(()=> ({}));
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
 
-      // הסרה מה־DOM
       card.remove();
 
-      // אם אין יותר חשבוניות – חזור למסך ריק והכפתור
       if (!document.querySelector('#invoicesList .invoice-card')) {
         document.getElementById('invoicesEmpty')?.style.removeProperty('display');
-        document.getElementById('invoicesList')?.style.setProperty('display','none');
+        document.getElementById('invoicesList')?.style.setProperty('display', 'none');
       }
 
       showToast?.('נמחק בהצלחה', 'success');
@@ -1019,7 +1075,6 @@
       showToast?.(err.message || 'שגיאה במחיקה', 'error');
     }
   });
-
   async function fetchJSON(url, opts = {}) {
     const method = (opts.method || 'GET').toUpperCase();
     const headers = {};
@@ -1034,17 +1089,20 @@
       headers,
       body: opts.body ? JSON.stringify(opts.body) : undefined
     });
-    const data = await res.json().catch(()=> ({}));
+    const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.ok === false) throw new Error(data?.message || `HTTP ${res.status}`);
     return data;
   }
 
   function fmt(d) {
-    try { return new Date(d).toLocaleString('he-IL'); } catch { return ''; }
+    try {
+      return new Date(d).toLocaleString('he-IL');
+    } catch {
+      return '';
+    }
   }
 
   function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
-    // נזהה כפילויות לפי אימייל
     const teamMap = new Map((team || []).map(m => [String(m.email || '').toLowerCase(), m]));
 
     const pending = (invites || []).map(inv => ({
@@ -1067,10 +1125,8 @@
       const data = await fetchJSON('/api/team/invites');
       const list = data?.invites || [];
 
-      // שמירה גלובלית למיזוג ברשימת עובדים
       tenantData.invites = list;
 
-      // --- עדכון טבלת ההזמנות אם קיימת ב־UI ---
       if (tbody && empty) {
         tbody.innerHTML = '';
         if (!list.length) {
@@ -1087,7 +1143,7 @@
               <td>
                 <div class="btn-row">
                   <button class="btn btn-secondary" data-action="resend" data-id="${inv.id}">שלח שוב</button>
-                  <button class="btn btn-danger"    data-action="cancel" data-id="${inv.id}">בטל</button>
+                  <button class="btn btn-danger" data-action="cancel" data-id="${inv.id}">בטל</button>
                 </div>
               </td>
             `;
@@ -1107,7 +1163,7 @@
                   await fetchJSON(`/api/team/invites/${id}/resend`, { method: 'POST' });
                   showToast?.('נשלחה תזכורת', 'success');
                 }
-                await loadInvites(); // רענון הטבלה וגם רשימת העובדים
+                await loadInvites();
               } catch (e) {
                 showToast?.(e?.message || 'שגיאה בפעולה', 'error');
               } finally {
@@ -1118,7 +1174,6 @@
         }
       }
 
-      // --- רענון רשימת העובדים המאוחדת ---
       renderTenant();
 
     } catch (e) {
@@ -1127,11 +1182,14 @@
     }
   }
 
-  function roleLabel(r){
-    switch(String(r||'').toLowerCase()){
-      case 'manager': return 'מנהל';
-      case 'shift_manager': return 'אחמ״ש';
-      default: return 'עובד';
+  function roleLabel(r) {
+    switch (String(r || '').toLowerCase()) {
+      case 'manager':
+        return 'מנהל';
+      case 'shift_manager':
+        return 'אחמ״ש';
+      default:
+        return 'עובד';
     }
   }
 
@@ -1175,16 +1233,18 @@
     document.getElementById('exportModal').classList.add('hidden');
     document.body.classList.remove('modal-open');
   }
+
   function normalizeMonth(raw) {
     const v = String(raw || "").trim();
     const m = v.match(/^(\d{4})-(\d{2})/);
     if (!m) return "";
-    let year  = Number(m[1]);
+    let year = Number(m[1]);
     let month = Number(m[2]);
     if (year < 2000 || year > 2100) return "";
-    if (month < 1 || month > 12)    return "";
-    return `${year.toString().padStart(4,"0")}-${month.toString().padStart(2,"0")}`;
+    if (month < 1 || month > 12) return "";
+    return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}`;
   }
+
   document.getElementById("exportConfirm")?.addEventListener("click", async () => {
     const raw = (document.getElementById("exportMonthModal")?.value || "").trim();
     const month = (raw.match(/^\d{4}-\d{2}/) || [])[0] || "";
@@ -1197,9 +1257,14 @@
     try {
       if (mode === 'pdf') {
         showToast?.("מכין PDF מאוחד...", "info");
-        const res = await fetch(`/api/invoices/export-pdf?month=${encodeURIComponent(month)}`, { credentials:'include' });
+        const res = await fetch(`/api/invoices/export-pdf?month=${encodeURIComponent(month)}`, {
+          credentials: 'include'
+        });
 
-        if (res.status === 404) { showToast?.("אין חשבוניות בחודש זה", "info"); return; }
+        if (res.status === 404) {
+          showToast?.("אין חשבוניות בחודש זה", "info");
+          return;
+        }
 
         const ct = (res.headers.get('content-type') || '').toLowerCase();
         const cd = res.headers.get('content-disposition') || '';
@@ -1207,17 +1272,20 @@
         if (!res.ok || !looksLikePdf) {
           let msg = "שגיאה ביצוא PDF";
           if (ct.includes('application/json')) {
-            const j = await res.json().catch(()=> ({}));
+            const j = await res.json().catch(() => ({}));
             if (j?.message) msg = j.message;
           }
           showToast?.(msg, "warning");
           return;
         }
         const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url; a.download = `חשבוניות-${month}.pdf`;
-        document.body.appendChild(a); a.click(); a.remove();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `חשבוניות-${month}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
         URL.revokeObjectURL(url);
 
         showToast?.("ה-PDF ירד בהצלחה", "success");
@@ -1226,28 +1294,36 @@
         return;
       }
 
-      // מצב Excel
+      // Excel mode
       showToast?.("מכין את הייצוא...", "info");
-      const res = await fetch(`/api/invoices/export?month=${encodeURIComponent(month)}`, { credentials: "include" });
+      const res = await fetch(`/api/invoices/export?month=${encodeURIComponent(month)}`, {
+        credentials: "include"
+      });
       const ct = (res.headers.get("content-type") || "").toLowerCase();
       const cd = res.headers.get("content-disposition") || "";
       const isXlsxCT = /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/i.test(ct);
       const isAttach = /attachment/i.test(cd) && /\.xlsx(\W|$)/i.test(cd);
-      if (res.status === 404) { showToast?.("אין חשבוניות בחודש זה", "info"); return; }
+      if (res.status === 404) {
+        showToast?.("אין חשבוניות בחודש זה", "info");
+        return;
+      }
       if (!res.ok || !(isXlsxCT || isAttach)) {
         let msg = "שגיאה ביצוא החשבוניות";
         if (ct.includes("application/json")) {
-          const j = await res.json().catch(()=> ({}));
+          const j = await res.json().catch(() => ({}));
           if (j?.message) msg = j.message;
         }
         showToast?.(msg, "warning");
         return;
       }
       const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement("a");
-      a.href = url; a.download = `חשבוניות-${month}.xlsx`;
-      document.body.appendChild(a); a.click(); a.remove();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `חשבוניות-${month}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
       URL.revokeObjectURL(url);
       showToast?.("הקובץ ירד בהצלחה", "success");
       document.getElementById("exportModal")?.classList.add("hidden");
@@ -1257,14 +1333,17 @@
     }
   });
 
-  // ===== Dispersions – UI & Logic =====
+  // ===== Dispersions â€" UI & Logic =====
 
   function dispersionCardTemplate(d) {
-    const id   = d.id || d._id;
+    const id = d.id || d._id;
     const taxi = d.taxi || '';
-    const payer= d.payer || '';
+    const payer = d.payer || '';
     const date = d.date ? new Date(d.date).toLocaleDateString('he-IL') : '—';
-    const price= Number(d.price||0).toLocaleString('he-IL',{minimumFractionDigits:2, maximumFractionDigits:2});
+    const price = Number(d.price || 0).toLocaleString('he-IL', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
 
     return `
     <div class="disp-card" data-id="${id}">
@@ -1282,7 +1361,7 @@
         </div>
       </div>
       <div class="disp-actions">
-        <button class="icon-btn" data-action="edit"  title="ערוך"><i class="fas fa-pen"></i></button>
+        <button class="icon-btn" data-action="edit" title="ערוך"><i class="fas fa-pen"></i></button>
         <button class="icon-btn danger" data-action="delete" title="מחק"><i class="fas fa-trash"></i></button>
       </div>
     </div>`;
@@ -1292,7 +1371,7 @@
   let editingDispersionId = null;
 
   function renderDispersions(list = []) {
-    const wrap  = document.getElementById('dispersionsList');
+    const wrap = document.getElementById('dispersionsList');
     const empty = document.getElementById('dispersionsEmpty');
     if (!wrap || !empty) return;
 
@@ -1306,7 +1385,6 @@
     wrap.style.display = '';
   }
 
-  // ← גארד קשיח: לא טוענים אם הפיצ'ר כבוי (למנוע 403)
   async function loadDispersions(query = '') {
     if (!tenantData?.features?.dispersions) return;
 
@@ -1318,8 +1396,8 @@
       ? `/api/dispersions/search?q=${encodeURIComponent(query.trim())}`
       : `/api/dispersions/list`;
 
-    const res  = await fetch(url, { credentials: 'include' });
-    const data = await res.json().catch(()=> ({}));
+    const res = await fetch(url, { credentials: 'include' });
+    const data = await res.json().catch(() => ({}));
     if (!res.ok || data?.ok === false) {
       showToast?.(data?.message || 'שגיאה בטעינת פיזורים', 'error');
       renderDispersions([]);
@@ -1334,19 +1412,29 @@
     const m = document.getElementById('dispersionModal');
     if (!m) return;
     document.getElementById('disp_close_btn')?.addEventListener('click', closeDispersionModal);
-    document.getElementById('disp_cancel')?.addEventListener('click', (e)=>{ e.preventDefault(); closeDispersionModal(); });
-    document.getElementById('disp_submit')?.addEventListener('click', (e)=>{ e.preventDefault(); saveDispersion(); });
-    m.addEventListener('click', (e)=>{ if (e.target.id === 'dispersionModal') closeDispersionModal(); });
-    document.addEventListener('keydown', (e)=>{ if (e.key === 'Escape') closeDispersionModal(); });
+    document.getElementById('disp_cancel')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      closeDispersionModal();
+    });
+    document.getElementById('disp_submit')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveDispersion();
+    });
+    m.addEventListener('click', (e) => {
+      if (e.target.id === 'dispersionModal') closeDispersionModal();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeDispersionModal();
+    });
   }
 
   function openDispersionModal(item = null) {
     editingDispersionId = item?.id || item?._id || null;
     document.getElementById('dispersionModalTitle').textContent = editingDispersionId ? 'ערוך פיזור' : 'הוסף פיזור';
 
-    document.getElementById('disp_date').value  = item?.date ? new Date(item.date).toISOString().slice(0,10) : '';
+    document.getElementById('disp_date').value = item?.date ? new Date(item.date).toISOString().slice(0, 10) : '';
     document.getElementById('disp_payer').value = item?.payer || '';
-    document.getElementById('disp_taxi').value  = item?.taxi  || '';
+    document.getElementById('disp_taxi').value = item?.taxi || '';
     document.getElementById('disp_price').value = (item?.price ?? '') === '' ? '' : String(item.price);
 
     document.getElementById('dispersionModal').classList.remove('hidden');
@@ -1360,39 +1448,38 @@
   }
 
   async function saveDispersion() {
-    const date  = (document.getElementById('disp_date')?.value  || '').trim();
+    const date = (document.getElementById('disp_date')?.value || '').trim();
     const payer = (document.getElementById('disp_payer')?.value || '').trim();
-    const taxi  = (document.getElementById('disp_taxi')?.value  || '').trim();
+    const taxi = (document.getElementById('disp_taxi')?.value || '').trim();
     const priceStr = (document.getElementById('disp_price')?.value || '').trim();
     const price = Number(priceStr);
 
-    if (!date)  return showToast?.('חובה לבחור תאריך', 'warning');
+    if (!date) return showToast?.('חובה לבחור תאריך', 'warning');
     if (!payer) return showToast?.('יש להזין מי שילם', 'warning');
-    if (!taxi)  return showToast?.('יש להזין שם מונית/נהג', 'warning');
+    if (!taxi) return showToast?.('יש להזין שם מונית/נהג', 'warning');
     if (priceStr === '' || isNaN(price) || price < 0) return showToast?.('מחיר לא תקין', 'warning');
 
     try {
       const body = { date, payer, taxi, price };
-      if (editingDispersionId){
-        await fetchJSON(`/api/dispersions/${editingDispersionId}`, { method:'PUT', body });
+      if (editingDispersionId) {
+        await fetchJSON(`/api/dispersions/${editingDispersionId}`, { method: 'PUT', body });
         showToast?.('הפיזור עודכן', 'success');
       } else {
-        await fetchJSON('/api/dispersions', { method:'POST', body });
+        await fetchJSON('/api/dispersions', { method: 'POST', body });
         showToast?.('פיזור נוסף', 'success');
       }
       closeDispersionModal();
       await loadDispersions(currentDispQuery);
-    } catch (err){
+    } catch (err) {
       showToast?.(err?.message || 'שגיאה בשמירה', 'error');
     }
   }
 
-  // ----- Delegation: Edit/Delete on cards -----
-  document.getElementById('dispersionsList')?.addEventListener('click', (e)=>{
-    const btn  = e.target.closest('[data-action]');
+  document.getElementById('dispersionsList')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
     if (!btn) return;
     const card = btn.closest('.disp-card');
-    const id   = card?.dataset.id;
+    const id = card?.dataset.id;
     if (!id) return;
 
     if (btn.dataset.action === 'edit') {
@@ -1404,75 +1491,83 @@
     }
   });
 
-  function confirmDeleteDispersion(id, cardEl){
+  function confirmDeleteDispersion(id, cardEl) {
     if (!confirm('למחוק את הפיזור?')) return;
-    (async ()=>{
-      try{
-        await fetchJSON(`/api/dispersions/${id}`, { method:'DELETE' });
+    (async () => {
+      try {
+        await fetchJSON(`/api/dispersions/${id}`, { method: 'DELETE' });
         showToast?.('נמחק בהצלחה', 'success');
         cardEl?.remove();
         const list = document.getElementById('dispersionsList');
         if (!list?.children?.length) loadDispersions(currentDispQuery);
-      }catch(err){
+      } catch (err) {
         showToast?.(err?.message || 'שגיאה במחיקה', 'error');
       }
     })();
   }
 
-  // ----- Init + Toolbar wiring -----
-  // שים לב: לא מריצים על DOMContentLoaded. נקרא רק אחרי applyFeatureGates והרשאות.
   async function initDispersionsUI() {
     const sec = document.querySelector('#section-dispersions');
     if (!sec) return;
-    if (!tenantData?.features?.dispersions) return;  // בדיקת פיצ'ר קשיחה
-    // הגנה כפולה גם מול DOM
+    if (!tenantData?.features?.dispersions) return;
     if (sec.matches('[data-feature].disabled')) return;
 
     ensureDispersionModal();
 
-    // "+ הוסף פיזור"
-    sec.querySelector('.btn-add')?.addEventListener('click', (e)=>{
+    sec.querySelector('.btn-add')?.addEventListener('click', (e) => {
       e.preventDefault();
       openDispersionModal(null);
     });
 
-    // "ייצוא"
     initDispExportModal(sec);
 
-    // חיפוש
     const searchInput = sec.querySelector('.search-box input[type="search"]');
     if (searchInput && !searchInput.__wired) {
-      const onSearch = debounce((v)=> loadDispersions(v), 250);
-      searchInput.addEventListener('input', (e)=> onSearch(e.target.value));
+      const onSearch = debounce((v) => loadDispersions(v), 250);
+      searchInput.addEventListener('input', (e) => onSearch(e.target.value));
       searchInput.__wired = true;
     }
 
     await loadDispersions('');
   }
 
-  // ----- Export Dispersions -----
-  function initDispExportModal(sectionEl){
-    const openBtn   = sectionEl.querySelector('.btn-export');
-    const modal     = document.getElementById('dispExportModal');
-    const closeBtn  = document.getElementById('dispExpClose');
+  function initDispExportModal(sectionEl) {
+    const openBtn = sectionEl.querySelector('.btn-export');
+    const modal = document.getElementById('dispExportModal');
+    const closeBtn = document.getElementById('dispExpClose');
     const cancelBtn = document.getElementById('dispExportCancel');
-    const okBtn     = document.getElementById('dispExportConfirm');
-    const monthEl   = document.getElementById('dispExportMonth');
+    const okBtn = document.getElementById('dispExportConfirm');
+    const monthEl = document.getElementById('dispExportMonth');
 
     if (!openBtn || !modal) return;
 
-    const open = ()=> modal.classList.remove('hidden');
-    const close= ()=> modal.classList.add('hidden');
+    const open = () => {
+      modal.classList.remove('hidden');
+      document.body.classList.add('modal-open');
+    };
+    const close = () => {
+      modal.classList.add('hidden');
+      document.body.classList.remove('modal-open');
+    };
 
-    openBtn.addEventListener('click', (e)=>{ e.preventDefault(); open(); });
+    openBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      open();
+    });
     closeBtn?.addEventListener('click', close);
-    cancelBtn?.addEventListener('click', (e)=>{ e.preventDefault(); close(); });
+    cancelBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      close();
+    });
 
-    okBtn?.addEventListener('click', async ()=>{
+    okBtn?.addEventListener('click', async () => {
       const month = monthEl?.value || '';
-      const type  = (document.querySelector('input[name="dispExpType"]:checked')?.value || 'xlsx').toLowerCase();
-      if (!/^\d{4}-\d{2}$/.test(month)) { showToast?.('בחר חודש (YYYY-MM)', 'warning'); return; }
-      try{
+      const type = (document.querySelector('input[name="dispExpType"]:checked')?.value || 'xlsx').toLowerCase();
+      if (!/^\d{4}-\d{2}$/.test(month)) {
+        showToast?.('בחר חודש (YYYY-MM)', 'warning');
+        return;
+      }
+      try {
         const url = `/api/dispersions/export?month=${encodeURIComponent(month)}&type=${encodeURIComponent(type)}`;
         const a = document.createElement('a');
         a.href = url;
@@ -1481,10 +1576,124 @@
         a.click();
         a.remove();
         close();
-      }catch(err){
+      } catch (err) {
         showToast?.('שגיאה בייצוא', 'error');
       }
     });
   }
+
+  // ---------- INIT ----------
+  document.addEventListener("DOMContentLoaded", async () => {
+    initTheme();
+
+    await withLoader(async () => {
+      const meRes = await fetch("/me", { credentials: "include" });
+      if (meRes.status === 401 || meRes.status === 403) {
+        location.href = "/login";
+        return;
+      }
+
+      const me = await meRes.json().catch(() => ({}));
+      const meUser = me?.user || null;
+      setUserUI(meUser || { username: "אורח", role: "user" });
+
+      if (meUser) {
+        const uNameEl = document.getElementById("settingsUserName");
+        const uMailEl = document.getElementById("settingsEmail");
+        if (uNameEl && !uNameEl.value) uNameEl.value = meUser.name || "";
+        if (uMailEl && !uMailEl.value) uMailEl.value = meUser.email || "";
+      }
+
+      const infoRes = await fetch("/api/tenant/info", { credentials: "include" });
+      if (infoRes.status === 401 || infoRes.status === 403) {
+        location.href = "/login";
+        return;
+      }
+
+      let data = {};
+      try {
+        data = await infoRes.json();
+      } catch {
+        data = {};
+      }
+
+      if (infoRes.ok && data?.ok && data?.tenant) {
+        tenantData = normalizeTenant(data);
+      } else {
+        window.showToast?.(data?.message || "שגיאה בטעינת נתוני העסק", "warning");
+        tenantData = {
+          name: "העסק שלי",
+          createdAt: new Date().toISOString(),
+          settings: {},
+          features: {},
+          teamMembers: []
+        };
+      }
+
+      renderTenant();
+      await loadLogs().catch(() => {});
+      await loadInvites().catch(() => renderInvites([]));
+      setInterval(() => loadLogs().catch(() => {}), 60_000);
+
+      applyFeatureGates();
+      renderBottomNav();
+      applyBottomNavGates();
+      bindNavEvents();
+      handleHashRoute();
+
+      if (tenantData?.features?.dispersions) {
+        await initDispersionsUI();
+      }
+
+      const primaryActionBtn = document.getElementById("primaryActionBtn");
+      if (primaryActionBtn) {
+        primaryActionBtn.addEventListener("click", () => {
+          const s = primaryActionBtn.dataset.section || currentSection;
+          handlePrimaryAction(s);
+        });
+      }
+
+      document.querySelector(".theme-toggle")?.addEventListener("click", toggleTheme);
+      const themeOpts = document.querySelectorAll(".theme-options .theme-option");
+      if (themeOpts[0]) themeOpts[0].addEventListener("click", () => setTheme("light"));
+      if (themeOpts[1]) themeOpts[1].addEventListener("click", () => setTheme("dark"));
+      document.querySelector(".btn-logout")?.addEventListener("click", logout);
+
+      document.getElementById("editTenantBtn")?.addEventListener("click", openEditModal);
+      document.querySelector("#editModal .modal-close")?.addEventListener("click", closeEditModal);
+      document.querySelector("#editModal .modal-footer .btn.btn-primary")
+        ?.addEventListener("click", saveTenantChanges);
+
+      document.querySelector("#section-settings .card:nth-of-type(1) .btn.btn-primary")
+        ?.addEventListener("click", saveBusinessSettings);
+      document.querySelector("#section-settings .card:nth-of-type(2) .btn.btn-primary")
+        ?.addEventListener("click", savePersonalSettings);
+      
+      // Mobile-specific initializations
+      addTouchFeedback();
+      initPullToRefresh();
+    }, {
+      text: "טוען לוח בקרה...",
+      subtext: "מביא נתונים מהשרת",
+      scopeSelector: ".main-content",
+      minShow: 300
+    });
+  });
+
+  (function hookEditMemberModalEvents() {
+    const saveBtn = document.getElementById('edit_save_btn');
+    const cancelBtn = document.getElementById('edit_cancel_btn');
+    const modalEl = document.getElementById('editMemberModal');
+
+    if (saveBtn) saveBtn.addEventListener('click', saveEditedMember);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeEditMemberModal);
+    if (modalEl) modalEl.addEventListener('click', (e) => {
+      if (e.target.id === 'editMemberModal') closeEditMemberModal();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeEditMemberModal();
+    });
+  })();
 
 })();

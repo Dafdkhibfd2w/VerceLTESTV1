@@ -180,7 +180,7 @@
               <i class="fas fa-file-invoice-dollar"></i>
             </div>
             <div class="stat-content">
-              <div class="stat-value" id="invoices-length">0</div>
+              <div class="stat-value" id="inviteCount">0</div>
               <div class="stat-label">חשבוניות</div>
             </div>
           </div>
@@ -341,54 +341,131 @@
       <!-- 🏢 SUPPLIERS SECTION -->
       <section id="section-suppliers" class="section" data-feature="suppliers">
         <div class="card">
-          <div class="card-header">
-            <h3>
-              <i class="fas fa-building"></i>
-              ספקים
-            </h3>
-            <div class="search-box">
-              <i class="fas fa-search"></i>
-              <input type="text" placeholder="חפש ספק..." />
+          <div class="card-header" style="display: flex; flex-wrap: wrap; align-items: center;">
+
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; flex: 1; min-width: 250px;">
+              <div class="search-box" style="flex: 1; min-width: 200px;">
+                <i class="fas fa-search" style="color:white;"></i>
+                <input type="text" id="supplierSearch" placeholder="חפש ספק..." />
+              </div>
+              <button class="btn btn-primary" id="addSupplierBtn" style="white-space: nowrap;">
+                <i class="fas fa-plus"></i>
+                הוסף ספק
+              </button>
             </div>
           </div>
           <div class="card-body">
-            <div class="empty-state">
-              <i class="fas fa-building" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
-              <h3>אין ספקים עדיין</h3>
-              <p>הוסף את הספק הראשון שלך</p>
-
+            <div id="suppliersEmptyState" class="empty-state" style="display: none;">
+              <h3>לא נמצא ספק</h3>
             </div>
+            
+            <div id="suppliersGrid" class="suppliers-grid"></div>
           </div>
         </div>
       </section>
 
-      <!-- 📦 ORDERS SECTION -->
-      <section id="section-orders" class="section" data-feature="orders">
-        <div class="card">
-          <div class="card-header">
-            <h3>
-              <i class="fas fa-box"></i>
-              הזמנות
-            </h3>
-            <div class="status-filters">
-              <button class="filter-btn active">הכל</button>
-              <button class="filter-btn">ממתין</button>
-              <button class="filter-btn">בטיפול</button>
-              <button class="filter-btn">הושלם</button>
-            </div>
+      <!-- Modal: Add/Edit Supplier -->
+      <div id="supplierModal" class="modal hidden" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+          <div class="modal-header">
+            <h3 id="supplierModalTitle">הוסף ספק חדש</h3>
+            <button class="modal-close">&times;</button>
           </div>
-          <div class="card-body">
-            <div class="empty-state">
-              <i class="fas fa-box" style="font-size: 4rem; color: var(--text-light); margin-bottom: var(--space-lg);"></i>
-              <h3>אין הזמנות עדיין</h3>
-              <p>צור את ההזמנה הראשונה שלך</p>
-              <button class="btn btn-primary mt-lg">
-                <i class="fas fa-plus"></i>
-                הזמנה חדשה
-              </button>
-            </div>
+          <div class="modal-body">
+            <form id="supplierForm">
+              <input type="hidden" id="supplierEditId" />
+              
+              <div class="form-group">
+                <label for="supplierName">שם הספק <span style="color: #e74c3c;">*</span></label>
+                <input type="text" id="supplierName" required placeholder="לדוגמה: חברת הפירות והירקות" />
+              </div>
+              
+              <div class="form-group">
+                <label for="supplierPhone">טלפון <span style="color: #e74c3c;">*</span></label>
+                <input type="tel" id="supplierPhone" required placeholder="050-1234567" />
+              </div>
+              
+              <div class="form-group">
+                <label>ימי הגעה</label>
+                <div class="days-selector">
+                  <label class="day-checkbox">
+                    <input type="checkbox" name="deliveryDay" value="0" />
+                    <span>א'</span>
+                  </label>
+                  <label class="day-checkbox">
+                    <input type="checkbox" name="deliveryDay" value="1" />
+                    <span>ב'</span>
+                  </label>
+                  <label class="day-checkbox">
+                    <input type="checkbox" name="deliveryDay" value="2" />
+                    <span>ג'</span>
+                  </label>
+                  <label class="day-checkbox">
+                    <input type="checkbox" name="deliveryDay" value="3" />
+                    <span>ד'</span>
+                  </label>
+                  <label class="day-checkbox">
+                    <input type="checkbox" name="deliveryDay" value="4" />
+                    <span>ה'</span>
+                  </label>
+                  <label class="day-checkbox">
+                    <input type="checkbox" name="deliveryDay" value="5" />
+                    <span>ו'</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label>מוצרים</label>
+                <div id="productsContainer"></div>
+                <button type="button" class="btn btn-outline btn-sm" id="addProductBtn">
+                  <i class="fas fa-plus"></i>
+                  הוסף מוצר
+                </button>
+              </div>
+              
+              <div class="form-group">
+                <label for="supplierNotes">הערות</label>
+                <textarea id="supplierNotes" rows="3" placeholder="הערות נוספות על הספק..."></textarea>
+              </div>
+              
+              <div class="modal-actions">
+                <button type="button" class="btn btn-outline modal-close">ביטול</button>
+                <button type="submit" class="btn btn-primary">שמור</button>
+              </div>
+            </form>
           </div>
         </div>
+      </div>
+
+      <!-- 📦 ORDERS SECTION -->
+      <section id="section-orders" class="section" data-feature="orders">
+        <!-- בחירת תאריך -->
+        <div class="card" style="margin-bottom: var(--space-lg);">
+          <div class="card-header">
+            <h3>
+              <i class="fas fa-calendar-alt"></i>
+              בחר תאריך להזמנה
+            </h3>
+          </div>
+          <div class="card-body">
+            <div style="display: flex; gap: var(--space-md); align-items: center; flex-wrap: wrap;">
+              <input type="date" id="orderDate" class="order-date-input" />
+              <button class="btn btn-primary" id="loadSuppliersBtn">
+                <i class="fas fa-search"></i>
+                טען ספקים
+              </button>
+              <button class="btn btn-success" id="saveOrdersBtn" style="display: none;">
+                <i class="fas fa-save"></i>
+                שמור הזמנות
+              </button>
+            </div>
+            <div id="dateInfo" style="margin-top: var(--space-md); color: var(--text-secondary); display: none;"></div>
+          </div>
+        </div>
+
+        <!-- רשימת ספקים ומוצרים -->
+        <div id="suppliersOrdersContainer"></div>
       </section>
 
       <!-- 📊 REPORTS SECTION -->
@@ -537,6 +614,8 @@
 
   <script defer src="/js/ui.js"></script>
   <script defer src="/js/dashboard.js"></script>
+  <script defer src="/js/suppliers.js"></script>
+  <script defer src="/js/orders.js"></script>
   <nav id="bottomNav" class="bottom-nav" aria-label="ניווט תחתון">
   <!-- ימולא דינמית ע"י JS -->
 </nav>
@@ -644,7 +723,6 @@
     </div>
   </div>
 </div>
-
 
 </body>
 </html>

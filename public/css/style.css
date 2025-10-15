@@ -17,6 +17,7 @@ html, body {
 }
 
 :root {
+  --sup-gap: 14px;
     /* ===== PRIMARY COLORS ===== */
     --primary: #1e3a5f;              /* כחול נייבי עמוק - כפתורים ראשיים, תפריטים */
     --primary-hover: #152d4a;        /* hover על כפתורים ראשיים */
@@ -689,6 +690,7 @@ body {
 
 /* פס התקדמות דקורטיבי */
 .loading-bar {
+  position: relative;
   margin-top: var(--space-lg);
   height: 4px;
   width: 100%;
@@ -698,22 +700,25 @@ body {
 }
 .loading-bar::before {
   content: "";
-  display: block;
-  height: 100%;
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -40%;                 /* מוחבא משמאל בדיוק לפי רוחב הפס (40%) */
   width: 40%;
-  border-radius: var(--radius-full);
   background: linear-gradient(90deg, var(--primary), var(--accent));
-  animation: loading-slide 1.2s ease-in-out infinite;
+  border-radius: var(--radius-full);
+  animation: slide-left 1.2s ease-in-out infinite;
+  will-change: left;
 }
-
-/* Animations */
+@keyframes slide-left {
+  from { left: -40%; opacity: .85; } /* מתחיל מחוץ לשמאל */
+  to   { left: 100%;  opacity: .85; } /* יוצא מימין */
+}
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 @keyframes loading-slide {
-  0%   { transform: translateX(-100%); opacity: .7; }
-  50%  { transform: translateX(20%);   opacity: 1; }
-  100% { transform: translateX(160%);  opacity: .7; }
+  0%   { transform: translateX(-100%); opacity: .8; } /* מוחבא משמאל (רוחב הפס) */
+  100% { transform: translateX(350%); opacity: .8; }  /* מוחבא מימין (100%+40%=140% מסילה = 350% פס; -100%→+250%) */
 }
 
 /* Reduce Motion support */

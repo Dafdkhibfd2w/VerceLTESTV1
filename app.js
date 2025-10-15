@@ -113,6 +113,9 @@ app.get('/admin',  (req, res, next) => {
 app.use("/api", require("./routes/team"));
 app.use("/api", require("./routes/invoices"));
 app.use('/api', require('./routes/dispersions'));
+app.use("/api", require("./routes/suppliers"));
+app.use("/api", require("./routes/orders"));
+
 app.use("/api", require("./routes/tenant"));
 app.use("/auth", require("./routes/auth"));
 app.use("/",    require("./routes/misc"));
