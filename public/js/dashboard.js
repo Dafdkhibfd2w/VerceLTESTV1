@@ -111,11 +111,22 @@
 
   const bottomNavItems = [
     { section: "home",        label: "בית",     icon: "fa-house" },
+    { section: "settings",    label: "הגדרות",   icon: "fa-gear" },
     { section: "invoices",    label: "חשבוניות", icon: "fa-file-invoice", feature: "invoices" },
+  ];
+
+  const moreMenuItems = [
     { section: "dispersions", label: "פיזורים",   icon: "fa-taxi",        feature: "dispersions" },
     { section: "suppliers",   label: "ספקים",    icon: "fa-building",     feature: "suppliers" },
     { section: "orders",      label: "הזמנות",   icon: "fa-briefcase",    feature: "orders" },
-    { section: "settings",    label: "הגדרות",   icon: "fa-gear" }
+    { section: "reports",     label: "דוחות",    icon: "fa-chart-bar",    feature: "reports" }
+  ];
+
+  const quickUploadItems = [
+    { id: "upload-invoice",    label: "חשבונית",  icon: "fa-file-invoice", feature: "invoices", action: "invoice" },
+    { id: "upload-dispersion", label: "פיזור",     icon: "fa-taxi",        feature: "dispersions", action: "dispersion" },
+    { id: "add-supplier",      label: "ספק",       icon: "fa-building",     feature: "suppliers", action: "supplier" },
+    { id: "add-order",         label: "הזמנה",     icon: "fa-briefcase",    feature: "orders", action: "order" }
   ];
 
   function timeAgo(ts) {
@@ -166,35 +177,277 @@
     }
   }
 
-  function renderBottomNav() {
-    const el = document.getElementById("bottomNav");
-    if (!el) return;
+  function toggleQuickUploadMenu() {
+    let menu = document.getElementById("quickUploadMenu");
+    if (!menu) {
+      menu = createQuickUploadMenu();
+      document.body.appendChild(menu);
+    }
+    
+    const isVisible = !menu.classList.contains("hidden");
+    if (isVisible) {
+      menu.classList.add("hidden");
+    } else {
+      // Close more menu if open
+      const moreMenu = document.getElementById("moreMenu");
+      if (moreMenu) moreMenu.classList.add("hidden");
+      
+      menu.classList.remove("hidden");
+    }
+  }
+
+  function closeAllPopupMenus() {
+    const quickMenu = document.getElementById("quickUploadMenu");
+    const moreMenu = document.getElementById("moreMenu");
+    if (quickMenu) quickMenu.classList.add("hidden");
+    if (moreMenu) moreMenu.classList.add("hidden");
+  }
+
+  function closeAllModals() {
+    // Close all modals
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    });
+    document.body.classList.remove('modal-open');
+    
+    // Reset modal-specific states
+    editingMemberId = null;
+    editingDispersionId = null;
+  }
+
+  function createQuickUploadMenu() {
+    const menu = document.createElement("div");
+    menu.id = "quickUploadMenu";
+    menu.className = "popup-menu hidden";
+    
     const feats = tenantData?.features || {};
-    el.innerHTML = bottomNavItems.map(item => {
-      const disabled = item.feature ? !feats[item.feature] : false;
-      return `
-        <button class="nav-tab"
-                data-section="${item.section}"
-                ${disabled ? 'aria-disabled="true"' : ''}
-                ${currentSection === item.section ? 'aria-current="page"' : ''}>
+    const items = quickUploadItems
+      .filter(item => !item.feature || feats[item.feature])
+      .map(item => `
+        <button class="popup-menu-item" data-action="${item.action}">
           <i class="fas ${item.icon}"></i>
           <span>${item.label}</span>
-        </button>`;
-    }).join("");
+        </button>
+      `).join("");
     
-    el.querySelectorAll(".nav-tab").forEach(btn => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const s = btn.getAttribute("data-section");
-        if (btn.getAttribute("aria-disabled") === "true") {
-          window.showToast?.("המודול כבוי לעסק זה", "warning");
-          return;
+    menu.innerHTML = `
+      <div class="popup-menu-content">
+        ${items || '<div class="empty">אין פריטים זמינים</div>'}
+
+      </div>
+    `;
+    
+    // Bind actions
+    menu.addEventListener("click", (e) => {
+      const btn = e.target.closest(".popup-menu-item");
+      if (!btn) return;
+      
+      const action = btn.dataset.action;
+      menu.classList.add("hidden");
+      
+      handleQuickUpload(action);
+    });
+    
+    // Close on outside click
+    menu.addEventListener("click", (e) => {
+      if (e.target === menu) {
+        menu.classList.add("hidden");
+      }
+    });
+    
+    return menu;
+  }
+
+  function handleQuickUpload(action) {
+    // Close the popup menu first
+    const quickMenu = document.getElementById("quickUploadMenu");
+    if (quickMenu) quickMenu.classList.add("hidden");
+    
+    switch(action) {
+      case "invoice":
+        // For invoice, just trigger the button
+        if (currentSection !== 'invoices') {
+          // Wait for section to load, then click
+          setTimeout(() => {
+            document.getElementById("btnUploadInvoicee")?.click();
+          }, 200);
+        } else {
+          document.getElementById("btnUploadInvoicee")?.click();
         }
-        if (location.hash !== `#${s}`) location.hash = `#${s}`;
-        else navigateToSection(s);
-      });
+        break;
+        
+      case "dispersion":
+        if (currentSection !== 'dispersions') {
+          setTimeout(() => {
+            document.getElementById("disaddbtn")?.click();
+          }, 200);
+        } else {
+            document.getElementById("disaddbtn")?.click();
+        }
+        break;
+        
+      case "supplier":
+        if (currentSection !== 'suppliers') {
+          setTimeout(() => {
+            document.getElementById("addSupplierBtn")?.click();
+          }, 200);
+        } else {
+          document.getElementById("addSupplierBtn")?.click();
+        }
+        break;
+        
+      case "order":
+        // Just navigate to orders page
+        location.hash = '#orders';
+        break;
+        
+      default:
+        window.showToast?.("פעולה זו עדיין לא זמינה", "info");
+    }
+  }
+
+  function toggleMoreMenu() {
+    let menu = document.getElementById("moreMenu");
+    if (!menu) {
+      menu = createMoreMenu();
+      document.body.appendChild(menu);
+    }
+    
+    const isVisible = !menu.classList.contains("hidden");
+    if (isVisible) {
+      menu.classList.add("hidden");
+    } else {
+      // Close quick upload menu if open
+      const quickMenu = document.getElementById("quickUploadMenu");
+      if (quickMenu) quickMenu.classList.add("hidden");
+      
+      menu.classList.remove("hidden");
+    }
+  }
+
+  function createMoreMenu() {
+    const menu = document.createElement("div");
+    menu.id = "moreMenu";
+    menu.className = "popup-menu hidden";
+    
+    const feats = tenantData?.features || {};
+    const items = moreMenuItems
+      .filter(item => !item.feature || feats[item.feature])
+      .map(item => `
+        <button class="popup-menu-item" data-section="${item.section}">
+          <i class="fas ${item.icon}"></i>
+          <span>${item.label}</span>
+        </button>
+      `).join("");
+    
+    menu.innerHTML = `
+      <div class="popup-menu-content">
+        ${items || '<div class="empty">אין פריטים זמינים</div>'}
+      </div>
+    `;
+    
+    // Bind navigation
+    menu.addEventListener("click", (e) => {
+      const btn = e.target.closest(".popup-menu-item");
+      if (!btn) return;
+      
+      const section = btn.dataset.section;
+      menu.classList.add("hidden");
+      
+      if (location.hash !== `#${section}`) location.hash = `#${section}`;
+      else navigateToSection(section);
+    });
+    
+    // Close on outside click
+    menu.addEventListener("click", (e) => {
+      if (e.target === menu) {
+        menu.classList.add("hidden");
+      }
+    });
+    
+    return menu;
+  }
+
+function renderBottomNav() {
+  const el = document.getElementById("bottomNav");
+  if (!el) return;
+  const feats = tenantData?.features || {};
+
+  const home = bottomNavItems.find(i => i.section === "home");
+  const invoices = bottomNavItems.find(i => i.section === "invoices");
+  const settings = bottomNavItems.find(i => i.section === "settings");
+
+  const renderBtn = (item) => {
+    if (!item) return "";
+    const disabled = item.feature ? !feats[item.feature] : false;
+    return `
+      <button class="nav-tab"
+              data-section="${item.section}"
+              ${disabled ? 'aria-disabled="true"' : ''}
+              ${currentSection === item.section ? 'aria-current="page"' : ''}>
+        <i class="fas ${item.icon}"></i>
+        <span>${item.label}</span>
+      </button>`;
+  };
+
+  let html = "";
+
+  // סדר חדש: בית → חשבוניות
+  [home, invoices].forEach(item => { html += renderBtn(item); });
+
+  // כפתור הפלוס במרכז
+  html += `
+    <button class="nav-tab nav-tab-plus" id="quickUploadBtn" aria-label="העלאות מהירות">
+      <i class="fas fa-plus"></i>
+      <span>הוסף</span>
+    </button>`;
+
+  // אחריו: הגדרות
+  html += renderBtn(settings);
+
+  // ולבסוף: כפתור "עוד"
+  html += `
+    <button class="nav-tab nav-tab-more" id="moreMenuBtn" aria-label="עוד">
+      <i class="fas fa-ellipsis-h"></i>
+      <span>עוד</span>
+    </button>`;
+
+  el.innerHTML = html;
+
+  // Bind navigation events
+  el.querySelectorAll(".nav-tab[data-section]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const s = btn.getAttribute("data-section");
+      if (btn.getAttribute("aria-disabled") === "true") {
+        window.showToast?.("המודול כבוי לעסק זה", "warning");
+        return;
+      }
+      if (location.hash !== `#${s}`) location.hash = `#${s}`;
+      else navigateToSection(s);
+    });
+  });
+
+  // Bind quick upload button
+  const quickUploadBtn = document.getElementById("quickUploadBtn");
+  if (quickUploadBtn) {
+    quickUploadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleQuickUploadMenu();
     });
   }
+
+  // Bind more menu button
+  const moreMenuBtn = document.getElementById("moreMenuBtn");
+  if (moreMenuBtn) {
+    moreMenuBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleMoreMenu();
+    });
+  }
+}
+
 
   function applyBottomNavGates() {
     const el = document.getElementById("bottomNav");
@@ -246,6 +499,10 @@
       location.hash = "#home";
       return;
     }
+    
+    // Close all popup menus and modals when navigating
+    closeAllPopupMenus();
+    closeAllModals();
     
     // Scroll to top on mobile when changing sections
     if (isMobile()) {
@@ -464,8 +721,10 @@
   function openAddMemberModal() {
     const m = document.getElementById('addMemberModal');
     if (!m) return;
-    document.getElementById('addMemberForm').reset();
+    const form = document.getElementById('addMemberForm');
+    if (form) form.reset();
     m.classList.remove('hidden');
+    m.style.display = 'flex';
     document.body.classList.add('modal-open');
     setTimeout(() => document.getElementById('am_name')?.focus(), 50);
   }
@@ -474,6 +733,7 @@
     const m = document.getElementById('addMemberModal');
     if (!m) return;
     m.classList.add('hidden');
+    m.style.display = 'none';
     document.body.classList.remove('modal-open');
   }
 
@@ -537,13 +797,21 @@
     document.getElementById("edit_role").value = (member.role || "employee");
     document.getElementById("edit_status").value = member.status || "active";
     document.getElementById("edit_role").disabled = (member.role === 'owner');
-    document.getElementById("editMemberModal").classList.remove("hidden");
+    const modal = document.getElementById("editMemberModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      modal.style.display = "flex";
+    }
     document.body.classList.add('modal-open');
   }
 
   function closeEditMemberModal() {
     editingMemberId = null;
-    document.getElementById("editMemberModal").classList.add("hidden");
+    const modal = document.getElementById("editMemberModal");
+    if (modal) {
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+    }
     document.body.classList.remove('modal-open');
   }
 
@@ -620,6 +888,7 @@
     document.getElementById("editTenantAddress").value = tenantData?.address || "";
     document.getElementById("editTenantPhone").value = tenantData?.phone || "";
     el.classList.remove("hidden");
+    el.style.display = "flex";
     document.body.classList.add("modal-open");
   }
 
@@ -627,6 +896,7 @@
     const el = document.getElementById("editModal");
     if (!el) return;
     el.classList.add("hidden");
+    el.style.display = "none";
     document.body.classList.remove("modal-open");
   }
 
@@ -890,10 +1160,7 @@
     document.getElementById('inv_close_btn').onclick = closeUploadInvoiceModal;
     document.getElementById('inv_cancel').onclick = closeUploadInvoiceModal;
     document.getElementById('inv_submit').onclick = onSubmitUpload;
-    modal.addEventListener('click', (e) => {
-      if (e.target.id === 'uploadInvoiceModal') closeUploadInvoiceModal();
-    });
-
+    modal.addEventListener('click', (e) => e.target === modal && closeUploadInvoiceModal());
     modal.querySelector('#inv_file').addEventListener('change', (e) => {
       const f = e.target.files?.[0];
       if (f) showToast?.(`נבחר: ${f.name}`, 'info', 900);
@@ -901,14 +1168,29 @@
   }
 
   function openUploadInvoiceModal() {
-    document.getElementById('inv_file').value = '';
-    document.getElementById('inv_desc').value = '';
-    document.getElementById('uploadInvoiceModal').classList.remove('hidden');
+    // Close all other modals first
+    closeAllModals();
+    
+    const modal = document.getElementById('uploadInvoiceModal');
+    if (!modal) return;
+    
+    const fileInput = document.getElementById('inv_file');
+    const descInput = document.getElementById('inv_desc');
+    
+    if (fileInput) fileInput.value = '';
+    if (descInput) descInput.value = '';
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
     document.body.classList.add('modal-open');
   }
 
   function closeUploadInvoiceModal() {
-    document.getElementById('uploadInvoiceModal').classList.add('hidden');
+    const modal = document.getElementById('uploadInvoiceModal');
+    if (!modal) return;
+    
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
     document.body.classList.remove('modal-open');
   }
 
@@ -1043,11 +1325,12 @@
     };
   }
 
-  document.getElementById('invoicesList')?.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.btn-del-invoice');
-    if (!btn) return;
+  // Fixed invoice deletion handler
+  document.addEventListener('click', async (e) => {
+    const deleteBtn = e.target.closest('.invoice-card .inv-actions .icon-btn[data-action="delete"]');
+    if (!deleteBtn) return;
 
-    const card = btn.closest('.invoice-card');
+    const card = deleteBtn.closest('.invoice-card');
     const id = card?.dataset.id;
     if (!id) return;
 
@@ -1075,6 +1358,7 @@
       showToast?.(err.message || 'שגיאה במחיקה', 'error');
     }
   });
+  
   async function fetchJSON(url, opts = {}) {
     const method = (opts.method || 'GET').toUpperCase();
     const headers = {};
@@ -1222,16 +1506,24 @@
   $btn?.addEventListener('click', () => refreshAll());
 
   document.getElementById('btnExportInvoices')?.addEventListener('click', () => {
-    document.getElementById('exportModal').classList.remove('hidden');
-    document.body.classList.add('modal-open');
+    const modal = document.getElementById('exportModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+    }
   });
 
   document.getElementById('exportClose')?.addEventListener('click', closeExportModal);
   document.getElementById('exportCancel')?.addEventListener('click', closeExportModal);
 
   function closeExportModal() {
-    document.getElementById('exportModal').classList.add('hidden');
-    document.body.classList.remove('modal-open');
+    const modal = document.getElementById('exportModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+    }
   }
 
   function normalizeMonth(raw) {
@@ -1289,8 +1581,7 @@
         URL.revokeObjectURL(url);
 
         showToast?.("ה-PDF ירד בהצלחה", "success");
-        document.getElementById("exportModal")?.classList.add("hidden");
-        document.body.classList.remove("modal-open");
+        closeExportModal();
         return;
       }
 
@@ -1326,14 +1617,13 @@
       a.remove();
       URL.revokeObjectURL(url);
       showToast?.("הקובץ ירד בהצלחה", "success");
-      document.getElementById("exportModal")?.classList.add("hidden");
-      document.body.classList.remove("modal-open");
+      closeExportModal();
     } finally {
       btn && (btn.disabled = false);
     }
   });
 
-  // ===== Dispersions â€" UI & Logic =====
+  // ===== Dispersions – UI & Logic =====
 
   function dispersionCardTemplate(d) {
     const id = d.id || d._id;
@@ -1410,7 +1700,10 @@
 
   function ensureDispersionModal() {
     const m = document.getElementById('dispersionModal');
-    if (!m) return;
+    if (!m || m.__wired) return;
+    
+    m.__wired = true;
+    
     document.getElementById('disp_close_btn')?.addEventListener('click', closeDispersionModal);
     document.getElementById('disp_cancel')?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -1420,31 +1713,40 @@
       e.preventDefault();
       saveDispersion();
     });
-    m.addEventListener('click', (e) => {
-      if (e.target.id === 'dispersionModal') closeDispersionModal();
-    });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeDispersionModal();
-    });
+    m.addEventListener('click', (e) => e.target === m && closeDispersionModal());
   }
 
   function openDispersionModal(item = null) {
+    // Close other modals first
+    closeAllModals();
+    
     editingDispersionId = item?.id || item?._id || null;
-    document.getElementById('dispersionModalTitle').textContent = editingDispersionId ? 'ערוך פיזור' : 'הוסף פיזור';
+    const title = document.getElementById('dispersionModalTitle');
+    if (title) {
+      title.textContent = editingDispersionId ? 'ערוך פיזור' : 'הוסף פיזור';
+    }
 
     document.getElementById('disp_date').value = item?.date ? new Date(item.date).toISOString().slice(0, 10) : '';
     document.getElementById('disp_payer').value = item?.payer || '';
     document.getElementById('disp_taxi').value = item?.taxi || '';
     document.getElementById('disp_price').value = (item?.price ?? '') === '' ? '' : String(item.price);
 
-    document.getElementById('dispersionModal').classList.remove('hidden');
-    document.body.classList.add('modal-open');
+    const modal = document.getElementById('dispersionModal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      document.body.classList.add('modal-open');
+    }
   }
 
   function closeDispersionModal() {
     editingDispersionId = null;
-    document.getElementById('dispersionModal').classList.add('hidden');
-    document.body.classList.remove('modal-open');
+    const modal = document.getElementById('dispersionModal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+    }
   }
 
   async function saveDispersion() {
@@ -1514,7 +1816,7 @@
 
     ensureDispersionModal();
 
-    sec.querySelector('.btn-add')?.addEventListener('click', (e) => {
+    sec.querySelector('#disaddbtn')?.addEventListener('click', (e) => {
       e.preventDefault();
       openDispersionModal(null);
     });
@@ -1543,10 +1845,12 @@
 
     const open = () => {
       modal.classList.remove('hidden');
+      modal.style.display = 'flex';
       document.body.classList.add('modal-open');
     };
     const close = () => {
       modal.classList.add('hidden');
+      modal.style.display = 'none';
       document.body.classList.remove('modal-open');
     };
 
@@ -1644,6 +1948,9 @@
       if (tenantData?.features?.dispersions) {
         await initDispersionsUI();
       }
+      
+      // Initialize dispersion modal listeners (even if not on dispersions page)
+      ensureDispersionModal();
 
       const primaryActionBtn = document.getElementById("primaryActionBtn");
       if (primaryActionBtn) {
@@ -1681,19 +1988,42 @@
   });
 
   (function hookEditMemberModalEvents() {
-    const saveBtn = document.getElementById('edit_save_btn');
-    const cancelBtn = document.getElementById('edit_cancel_btn');
-    const modalEl = document.getElementById('editMemberModal');
-
-    if (saveBtn) saveBtn.addEventListener('click', saveEditedMember);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeEditMemberModal);
-    if (modalEl) modalEl.addEventListener('click', (e) => {
-      if (e.target.id === 'editMemberModal') closeEditMemberModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeEditMemberModal();
-    });
+    const modal = document.getElementById('editMemberModal');
+    if (!modal) return;
+    
+    document.getElementById('edit_save_btn')?.addEventListener('click', saveEditedMember);
+    document.getElementById('edit_cancel_btn')?.addEventListener('click', closeEditMemberModal);
+    modal.addEventListener('click', (e) => e.target === modal && closeEditMemberModal());
   })();
 
+  // ========== GLOBAL ESC KEY HANDLER ==========
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    
+    // Close all visible modals
+    const modals = document.querySelectorAll('.modal:not(.hidden)');
+    modals.forEach(modal => {
+      const id = modal.id;
+      if (id === 'uploadInvoiceModal') closeUploadInvoiceModal();
+      else if (id === 'dispersionModal') closeDispersionModal();
+      else if (id === 'editMemberModal') closeEditMemberModal();
+      else if (id === 'addMemberModal') closeAddMemberModal();
+      else if (id === 'editModal') closeEditModal();
+      else if (id === 'exportModal') closeExportModal();
+      else if (id === 'dispExportModal') {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+      }
+    });
+    
+    // Close popup menus
+    closeAllPopupMenus();
+  });
+document.getElementById('inv_close_btn').onclick = closeUploadInvoiceModal;
+document.getElementById('inv_cancel').onclick = closeUploadInvoiceModal;
+document.getElementById('disp_close_btn')?.addEventListener('click', closeDispersionModal);
+document.getElementById('disp_cancel')?.addEventListener('click', closeDispersionModal);
+document.getElementById('edit_cancel_btn')?.addEventListener('click', closeEditMemberModal);
+document.getElementById('inv_submit').onclick = onSubmitUpload;
 })();

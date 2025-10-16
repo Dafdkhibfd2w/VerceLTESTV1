@@ -256,7 +256,7 @@
               <i class="fas fa-file-export"></i>
               <span>ייצוא</span>
             </button>
-            <button class="btn btn-primary btn-add">
+            <button class="btn btn-primary" id="disaddbtn">
               <i class="fas fa-plus"></i>
               <span>פיזור חדש</span>
             </button>
@@ -723,6 +723,30 @@
     </div>
   </div>
 </div>
-
+<!-- 📄 Modal: Upload Invoice -->
+<div id="uploadInvoiceModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>העלה חשבונית חדשה</h3>
+      <button class="modal-close" id="inv_close_btn">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>בחר קובץ</label>
+        <input type="file" id="inv_file" accept=".pdf,image/*" />
+      </div>
+      <div class="form-row">
+        <label>תיאור החשבונית</label>
+        <input type="text" id="inv_desc" placeholder="לדוגמה: חשבונית מס #145" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" id="inv_cancel">ביטול</button>
+      <button class="btn btn-primary" id="inv_submit">העלה</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
