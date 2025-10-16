@@ -2098,3 +2098,50 @@ input:focus, select:focus {
     text-align: center;
   }
 }
+/* ========================================
+   תיקון גלילה ברשימות במובייל
+======================================== */
+
+@media (max-width: 768px) {
+  /* וידוא שכל הרשימות יכולות לגלול במובייל */
+  .card-body #invoicesList,
+  .card-body #dispersionsList,
+  .team-card .team-list,
+  .logs-card .logs-list,
+  .products-order-list {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch; /* גלילה חלקה ב-iOS */
+  }
+  
+  /* וידוא שה-card-body עצמו לא חוסם גלילה */
+  .card-body {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  /* סקרול בר נראה יותר במובייל */
+  .card-body #invoicesList::-webkit-scrollbar,
+  .card-body #dispersionsList::-webkit-scrollbar,
+  .team-card .team-list::-webkit-scrollbar,
+  .logs-card .logs-list::-webkit-scrollbar,
+  .products-order-list::-webkit-scrollbar {
+    width: 8px !important;
+  }
+  
+  .card-body #invoicesList::-webkit-scrollbar-thumb,
+  .card-body #dispersionsList::-webkit-scrollbar-thumb,
+  .team-card .team-list::-webkit-scrollbar-thumb,
+  .logs-card .logs-list::-webkit-scrollbar-thumb,
+  .products-order-list::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb, #94a3b8) !important;
+    border-radius: 8px !important;
+  }
+  
+  /* וידוא שהכרטיסים לא מגבילים גובה */
+  .card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
