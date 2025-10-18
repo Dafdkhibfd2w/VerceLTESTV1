@@ -2180,7 +2180,7 @@ input:focus, select:focus {
   .team-card .team-list::-webkit-scrollbar,
   .logs-card .logs-list::-webkit-scrollbar,
   .products-order-list::-webkit-scrollbar {
-    width: 10px !important;
+    width: 6px !important;
     background: rgba(0,0,0,0.1) !important;
   }
   
@@ -2189,13 +2189,10 @@ input:focus, select:focus {
   .team-card .team-list::-webkit-scrollbar-thumb,
   .logs-card .logs-list::-webkit-scrollbar-thumb,
   .products-order-list::-webkit-scrollbar-thumb {
-    background: var(--primary, #3b82f6) !important;
     border-radius: 8px !important;
-    border: 2px solid transparent !important;
     background-clip: padding-box !important;
   }
   
-  /* וידוא שהכרטיסים לא מגבילים גובה */
   .card {
     max-height: none !important;
     overflow: visible !important;
@@ -2237,7 +2234,6 @@ input:focus, select:focus {
   }
   
   body {
-    height: auto !important;
     min-height: 100vh !important;
   }
   

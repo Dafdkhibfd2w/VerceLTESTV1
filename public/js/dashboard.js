@@ -1978,7 +1978,6 @@ function renderBottomNav() {
       
       // Mobile-specific initializations
       addTouchFeedback();
-      initPullToRefresh();
     }, {
       text: "טוען לוח בקרה...",
       subtext: "מביא נתונים מהשרת",
