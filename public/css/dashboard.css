@@ -2147,7 +2147,6 @@ input:focus, select:focus {
 }
 
 
-
 /* ========================================
    תיקון גלילה ברשימות במובייל
 ======================================== */
@@ -2231,31 +2230,44 @@ input:focus, select:focus {
     margin-bottom: 0 !important;
   }
   
-  /* מניעת bounce/overscroll ב-body */
+  /* מניעת bounce/overscroll רק בעמוד הראשי - אבל מאפשרים גלילה רגילה */
   html, body {
     overscroll-behavior-y: none !important;
     overflow-x: hidden !important;
-    position: relative !important;
-    height: 100% !important;
+  }
+  
+  body {
+    height: auto !important;
+    min-height: 100vh !important;
   }
   
   .content {
-    overscroll-behavior-y: none !important;
+    overscroll-behavior-y: auto !important; /* מאפשר גלילה רגילה */
     padding-bottom: var(--space-xl) !important;
-    touch-action: pan-y !important;
   }
   
-  /* מניעת zoom על double-tap */
-  * {
+  /* מניעת zoom על double-tap - אבל מאפשרים גלילה */
+  body, .header, .card, .btn {
     touch-action: manipulation !important;
   }
   
-  /* אבל מאפשרים גלילה ברשימות */
+  /* מאפשרים גלילה מלאה ברשימות ובעמוד */
+  .main-content,
+  .content,
+  .card-body #invoicesList,
+  .card-body #dispersionsList,
+  .team-card .team-list,
+  .logs-card .logs-list,
+  .products-order-list {
+    touch-action: pan-y !important;
+  }
+  
+  /* מאפשרים גלילה גם לאלמנטים בתוך הרשימות */
   .card-body #invoicesList *,
   .card-body #dispersionsList *,
   .team-card .team-list *,
   .logs-card .logs-list *,
   .products-order-list * {
-    touch-action: pan-y !important;
+    touch-action: inherit !important;
   }
 }
