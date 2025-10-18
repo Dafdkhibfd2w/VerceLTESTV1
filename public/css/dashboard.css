@@ -2145,3 +2145,117 @@ input:focus, select:focus {
     overflow: visible !important;
   }
 }
+
+
+
+/* ========================================
+   תיקון גלילה ברשימות במובייל
+======================================== */
+
+@media (max-width: 768px) {
+  /* וידוא שכל הרשימות יכולות לגלול במובייל */
+  .card-body #invoicesList,
+  .card-body #dispersionsList,
+  .team-card .team-list,
+  .logs-card .logs-list,
+  .products-order-list {
+    max-height: 60vh !important; /* גובה דינמי לפי מסך */
+    overflow-y: scroll !important; /* תמיד scroll במקום auto */
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important; /* מונע pull-to-refresh */
+    position: relative !important;
+    touch-action: pan-y !important; /* מאפשר רק גלילה אנכית */
+  }
+  
+  /* וידוא שה-card-body עצמו לא חוסם גלילה */
+  .card-body {
+    overflow: visible !important;
+    max-height: none !important;
+    position: relative !important;
+  }
+  
+  /* סקרול בר נראה ברור במובייל */
+  .card-body #invoicesList::-webkit-scrollbar,
+  .card-body #dispersionsList::-webkit-scrollbar,
+  .team-card .team-list::-webkit-scrollbar,
+  .logs-card .logs-list::-webkit-scrollbar,
+  .products-order-list::-webkit-scrollbar {
+    width: 10px !important;
+    background: rgba(0,0,0,0.1) !important;
+  }
+  
+  .card-body #invoicesList::-webkit-scrollbar-thumb,
+  .card-body #dispersionsList::-webkit-scrollbar-thumb,
+  .team-card .team-list::-webkit-scrollbar-thumb,
+  .logs-card .logs-list::-webkit-scrollbar-thumb,
+  .products-order-list::-webkit-scrollbar-thumb {
+    background: var(--primary, #3b82f6) !important;
+    border-radius: 8px !important;
+    border: 2px solid transparent !important;
+    background-clip: padding-box !important;
+  }
+  
+  /* וידוא שהכרטיסים לא מגבילים גובה */
+  .card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* תיקון bottom-nav - תמיד קבוע למטה עם תמיכה במקלדת */
+  .bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10000 !important;
+    transform: translateZ(0) !important; /* GPU acceleration */
+    will-change: transform !important;
+    backface-visibility: hidden !important;
+  }
+  
+  /* תמיכה בטלפונים עם notch */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom) !important;
+    }
+  }
+  
+  /* padding למניעת חפיפה עם bottom-nav */
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+  
+  .main-content {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* מניעת bounce/overscroll ב-body */
+  html, body {
+    overscroll-behavior-y: none !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+    height: 100% !important;
+  }
+  
+  .content {
+    overscroll-behavior-y: none !important;
+    padding-bottom: var(--space-xl) !important;
+    touch-action: pan-y !important;
+  }
+  
+  /* מניעת zoom על double-tap */
+  * {
+    touch-action: manipulation !important;
+  }
+  
+  /* אבל מאפשרים גלילה ברשימות */
+  .card-body #invoicesList *,
+  .card-body #dispersionsList *,
+  .team-card .team-list *,
+  .logs-card .logs-list *,
+  .products-order-list * {
+    touch-action: pan-y !important;
+  }
+}
