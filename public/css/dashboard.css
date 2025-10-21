@@ -1,0 +1,2272 @@
+/* Layout */
+body {
+  display: flex;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: transform var(--transition);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-xl);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.logo i {
+  font-size: var(--text-2xl);
+}
+
+.nav-menu {
+  flex: 1;
+  padding: var(--space-lg);
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  margin-bottom: var(--space-xs);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.nav-item i {
+  width: 20px;
+  text-align: center;
+}
+
+/* User Section */
+
+/* User Section */
+.user-section {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+}
+
+.user-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.user-role {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+
+.btn-logout {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius);
+  background: var(--bg-hover);
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.btn-logout:hover {
+  background: var(--error);
+  color: var(--text-inverse);
+}
+
+/* Main Content */
+.main-content {
+  flex: 1;
+  margin-right: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-content h1 {
+  font-size: var(--text-3xl);
+  color: var(--text);
+  margin-bottom: var(--space-xs);
+}
+
+.header-subtitle {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+
+/* Content */
+.content {
+  margin-top: 20px;
+  flex: 1;
+}
+
+/* Info Section */
+.info-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+.page-display {
+  display: grid;
+
+}
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-header h3 {
+  font-size: var(--text-lg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.card-body {
+  padding: var(--space-md);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.info-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.info-value {
+  font-size: var(--text-base);
+  color: var(--text);
+}
+
+/* Team List */
+.team-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.logs-card .logs-list{
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  direction: ltr;           /* שומר את ה-scrollbar מימין */
+}
+.logs-card .logs-list::-webkit-scrollbar { width: 6px; }
+.logs-card .logs-list::-webkit-scrollbar-track { background: transparent; }
+.logs-card .logs-list::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb, #475569);
+  border-radius: 8px;
+}
+.main-content .card,
+.info-section .card {
+  max-width: none;
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+
+
+.info-section {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(340px, 1fr));
+  gap: var(--space-lg);
+  align-items: stretch;
+}
+
+
+
+
+
+/* 3) רספונסיביות – מצמצם ל-2 ואז ל-1 לפי הרוחב */
+@media (max-width: 1280px) {
+  .info-section { grid-template-columns: repeat(2, minmax(320px, 1fr)); }
+}
+@media (max-width: 900px) {
+  .info-section { grid-template-columns: 1fr; }
+}
+.logs-card .log{
+  direction: rtl;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+  margin-bottom: 10px;
+}
+.logs-card .log .dot{ opacity:.6; }
+.logs-card .log .who{ font-weight: 700; }
+.logs-card .log .when{ white-space: nowrap; font-size: .85rem; color: var(--text-secondary); }
+.logs-card .empty { color: var(--text-secondary); text-align:center; padding: 16px 0; }
+
+.team-member {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md);
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.member-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--primary-light);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+
+.member-email {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.role-badge {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-owner {
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+.role-admin {
+  background: var(--secondary);
+  color: var(--text-inverse);
+}
+
+.role-manager {
+  background: var(--info);
+  color: var(--text-inverse);
+}
+
+.role-staff {
+  background: var(--bg-alt);
+  color: var(--text-secondary);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: var(--space-lg);
+}
+
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  box-shadow:
+  0 8px 16px rgba(0,0,0,.12),
+  0 3px  6px rgba(0,0,0,.08),
+  0 0 0 1px rgba(0,0,0,.05);
+  transition: 0.3s;
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-inverse);
+  font-size: var(--text-2xl);
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: var(--space-xs);
+}
+
+.stat-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+}
+
+.modal-header {
+  padding: var(--space-xl);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: var(--text-xl);
+  color: var(--text);
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+
+.modal-close:hover {
+  background: var(--error);
+  color: var(--text-inverse);
+}
+
+.modal-body {
+  padding: var(--space-xl);
+}
+
+.modal-footer {
+  padding: var(--space-xl);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-start;
+  gap: var(--space-md);
+}
+
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .info-section {
+    grid-template-columns: 1fr;
+  }
+  
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(100%);
+  }
+  
+  .sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .main-content {
+    margin-right: 0;
+  }
+  
+
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.theme-toggle, #refreshAllBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-lg);
+  padding: 0;
+}
+.pending {
+  display: inline-block;
+  background: var(--warning-bg, #facc15);
+  color: var(--warning-text, #1a1a1a);
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+.pending-invite {
+  opacity: 0.8;
+  border: 1px dashed var(--muted);
+}
+.theme-toggle:hover, #refreshAllBtn:hover {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Dark mode icon rotation */
+[data-theme="dark"] .theme-toggle i {
+  transform: rotate(180deg);
+}
+
+/* Sections */
+.section {
+  display: none;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.section.active {
+  display: block;
+}
+
+.page-display{
+      text-align: center;
+      background: var(--bg-primary);
+      position: relative;
+
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: var(--space-2xl) var(--space-xl);
+  color: var(--text-secondary);
+}
+
+.empty-state h3 {
+  color: var(--text);
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-xl);
+}
+
+.empty-state p {
+  margin-bottom: var(--space-lg);
+}
+
+/* Search Box */
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-box i {
+  position: absolute;
+  right: var(--space-md);
+  color: var(--text-light);
+}
+
+.search-box input {
+  padding-right: 40px;
+  min-width: 250px;
+}
+
+/* Status Filters */
+.status-filters {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.filter-btn {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.filter-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  color: var(--text-inverse);
+  border-color: var(--primary);
+}
+
+/* Header Filters */
+.header-filters {
+
+}
+
+/* Reports Grid */
+.reports-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: var(--space-lg);
+}
+
+.chart-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  background: var(--bg-hover);
+  border-radius: var(--radius);
+  min-height: 300px;
+  color: var(--text-secondary);
+}
+
+/* Settings Grid */
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* Theme Options */
+.theme-options {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.theme-option {
+  flex: 1;
+  padding: var(--space-lg);
+  border: 2px solid var(--border);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+
+.theme-option i {
+  font-size: var(--text-2xl);
+  color: var(--text-secondary);
+}
+
+.theme-option:hover {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.theme-option:hover i {
+  color: var(--primary);
+}
+
+[data-theme="dark"] .theme-option[onclick*="dark"],
+[data-theme="light"] .theme-option[onclick*="light"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--text-inverse);
+}
+
+[data-theme="dark"] .theme-option[onclick*="dark"] i,
+[data-theme="light"] .theme-option[onclick*="light"] i {
+  color: var(--text-inverse);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .reports-grid,
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* ===== Loading Overlay ===== */
+
+
+
+/* ===== Team list – card layout for your existing classes ===== */
+/* Team list → cards */
+/* ===== Team list (full) ===== */
+
+/* רשימה – גלילה אנכית בלבד, סקרול מימין, בלי רקע למסילה */
+.team-card .team-list{
+  max-height: 240px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
+  overflow-y: auto;
+  overflow-x: hidden;
+  direction: ltr;             /* הסקרול-בר בצד ימין גם ב-RTL */
+}
+
+/* הסקרול-בר: רק ה"קו", בלי רקע (WebKit) */
+.team-card .team-list::-webkit-scrollbar{ width: 8px; background: transparent; }
+.team-card .team-list::-webkit-scrollbar-track{ background: transparent !important; }
+.team-card .team-list::-webkit-scrollbar-thumb{
+  background: var(--scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+/* Firefox */
+.team-card .team-list{ scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+
+/* צבע הקו לפי ערכת צבעים */
+:root[data-theme="dark"]  { --scroll-thumb: #64748b; }
+:root[data-theme="light"] { --scroll-thumb: #94a3b8; }
+
+/* כרטיס עובד – דסקטופ: שורה אחת (אוואטר | מידע | תפקיד | פעולות) */
+.team-card .team-list .member{
+  direction: rtl;                            /* התוכן נשאר RTL */
+  display: grid;
+  grid-template-columns: 48px 1fr auto auto; /* avatar | info | role | actions */
+  grid-template-areas: "avatar info role actions";
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-surface);
+}
+
+/* hover עדין */
+.team-card .team-list .member:hover{
+  box-shadow: 0 4px 12px rgba(0,0,0,.18);
+}
+
+/* אזורים */
+.team-card .member .avatar{ grid-area: avatar; width:48px;height:48px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--primary);font-weight:800; }
+
+.team-card .member .info  { grid-area: info; min-width: 0; }
+.team-card .member .role  { grid-area: role; }
+.team-card .member .actions{ grid-area: actions; display:flex; gap:8px;     margin-top: 7px; }
+
+/* טקסטים שלא יפרצו לרוחב */
+.team-card .member .name,
+.team-card .member .email{
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* תג תפקיד */
+.team-card .member .role{
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:.8rem;
+  white-space:nowrap;
+  border:1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+.team-card .member .role.owner    { color: var(--primary); }
+.team-card .member .role.manager  { color: var(--success); }
+.team-card .member .role.employee { color: var(--text-secondary); }
+
+/* כפתורי פעולה */
+.team-card .member .icon-btn{
+  width:36px;height:36px;border-radius:10px;
+  border:1px solid var(--border); background: var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  transition: transform .12s ease, box-shadow .2s ease;
+}
+.team-card .member .icon-btn:hover{ transform:translateY(-1px); box-shadow: var(--shadow); }
+.team-card .member .icon-btn.primary{ color: var(--primary); }
+.team-card .member .icon-btn.danger { color: var(--error); }
+
+/* ===== מובייל: הכפתורים/תפקיד יורדים שורה ===== */
+@media (max-width: 560px){
+  .team-card .team-list .member{
+    grid-template-columns: 44px 1fr;
+    grid-template-rows: auto auto auto;           /* מידע | תפקיד | פעולות */
+    grid-template-areas:
+      "avatar info"
+      "avatar role"
+      "avatar actions";
+    align-items: start;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .team-card .member .actions{
+    flex-wrap: wrap;       /* ירידת שורה אוטומטית אם אין מקום */
+    gap: 8px;
+  }
+
+  /* מונע גלילה לרוחב */
+  .team-card .member .email{ max-width: 100%; }
+}
+
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.export-options .opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.export-options .opt:hover { background: rgba(255,255,255,0.1); }
+
+/* דסקטופ רחב – מעבר לגריד מרובה עמודות יפות */
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+/* כרטיס חשבונית – אייקון | טקסט | פעולות (בלי absolute) */
+
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%; /* או גובה קבוע אם זה אזור ספציפי */
+}
+
+
+#exportMonthModal {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border, #334155);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: Heebo, system-ui, sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  direction: ltr; /* כדי שהתאריך יופיע נכון */
+  min-width: 250px;
+}
+
+/* אפקט ריחוף */
+#exportMonthModal:hover {
+  border-color: var(--primary, #3b82f6);
+  box-shadow: 0 0 6px rgba(59,130,246,0.4);
+}
+
+/* במצב פוקוס */
+#exportMonthModal:focus {
+  border-color: var(--primary, #3b82f6);
+  background: rgba(59,130,246,0.1);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.3);
+}
+
+/* מצב כהה/בהיר */
+[data-theme="light"] #exportMonthModal {
+  background: #fff;
+  color: #111;
+  border-color: #ccc;
+}
+[data-theme="light"] #exportMonthModal:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0 6px rgba(59,130,246,0.2);
+}
+
+
+
+/* ===== DISPERSIONS – רספונסיבי מלא ===== */
+
+/* סרגל כלים עליון */
+.dispersions-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+
+.dispersions-toolbar .search-box {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.dispersions-toolbar .search-box input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.95rem;
+}
+
+#supplierSearch {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  font-size: 0.95rem;
+}
+
+
+
+.dispersions-toolbar .search-box i {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+/* כפתורים בסרגל */
+.dispersions-toolbar .btn {
+  white-space: nowrap;
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+/* רשימת פיזורים – גריד רספונסיבי */
+.dispersions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+/* כרטיס פיזור */
+.disp-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "price meta actions";
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  align-items: start;
+}
+
+.disp-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  border-color: var(--primary);
+}
+
+/* מחיר – עיגול גדול */
+.disp-price {
+  grid-area: price;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.disp-price .num {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.disp-price .lbl {
+  font-size: 0.7rem;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+/* מידע */
+.disp-meta {
+  grid-area: meta;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.disp-line {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.disp-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.disp-title i {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.disp-small {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.disp-small i {
+  width: 16px;
+  opacity: 0.7;
+}
+
+/* פעולות */
+.disp-actions {
+  grid-area: actions;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.disp-actions .icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text);
+}
+
+.disp-actions .icon-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.disp-actions .icon-btn.danger {
+  color: var(--error);
+}
+
+.disp-actions .icon-btn.danger:hover {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+/* ===== מובייל – התאמות ===== */
+@media (max-width: 640px) {
+  /* סרגל כלים – עמודה */
+  .dispersions-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .dispersions-toolbar .search-box,
+  .dispersions-toolbar .btn {
+    width: 100%;
+  }
+  
+  /* כרטיס – פריסה מחדש */
+  .disp-card {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "price meta"
+      "actions actions";
+    gap: 12px;
+  }
+  
+  .disp-price {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .disp-price .num {
+    font-size: 1rem;
+  }
+  
+  /* פעולות בשורה תחתונה */
+  .disp-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+}
+
+/* מובייל קטן מאוד */
+@media (max-width: 400px) {
+  .disp-price {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .disp-price .num {
+    font-size: 0.9rem;
+  }
+  
+  .disp-title {
+    font-size: 0.95rem;
+  }
+  
+  .dispersions-list {
+    gap: 12px;
+    padding: 12px;
+  }
+}/* ===== INVOICES = EXACT CLONE OF DISPERSIONS ===== */
+
+/* טולבר: אותו מבנה, יישור שמאל (RTL: לימין) והרחבות */
+#section-invoices .card-header .header-filters,
+.invoices-toolbar{
+  display:flex; flex-wrap:wrap; gap:12px; padding:16px;
+  background:var(--bg-surface); border-bottom:1px solid var(--border);
+  align-items:center; justify-content:flex-start;
+}
+
+/* חיפוש וכפתורים */
+#section-invoices .card-header .header-filters .search-box,
+.invoices-toolbar .search-box{ flex:1; min-width:200px; position:relative; }
+#section-invoices .card-header .header-filters .search-box input,
+.invoices-toolbar .search-box input{
+  width:100%; padding:10px 40px 10px 12px; border-radius:12px;
+  border:1px solid var(--border); background:var(--bg); font-size:.95rem;
+}
+#section-invoices .card-header .header-filters .search-box i,
+.invoices-toolbar .search-box i{
+  position:absolute; right:14px; top:50%; transform:translateY(-50%);
+  color:var(--text-secondary);
+}
+#section-invoices .card-header .header-filters .btn,
+.invoices-toolbar .btn{
+  white-space:nowrap; padding:10px 16px; border-radius:12px;
+  display:inline-flex; align-items:center; gap:8px; font-size:.95rem;
+}
+
+/* מבטל קו מפריד שגרם למראה אחר */
+#section-invoices hr, #section-invoices .divider{ display:none; }
+
+/* רשימה: זהה לפיזורים */
+.invoices-list, #invoicesList{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap:16px; padding:16px;
+}
+@media (max-width: 640px) {
+  .invoice-card {
+    display: grid;
+    grid-template-columns: 1fr auto; /* מידע מצד ימין, כפתור מצד שמאל */
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "meta icn"
+      "meta actions";
+    gap: 12px;
+    align-items: start;
+    position: relative;
+  }
+
+  .card-header{
+    display: block;
+  }
+
+  /* העיגול לפתיחה — קבוע למעלה בצד שמאל */
+  .invoice-card .icn {
+    grid-area: icn;
+    align-self: start;
+    justify-self: end;
+    margin-top: 4px;
+  }
+
+  /* כפתור המחיקה נשאר למטה יותר */
+  .inv-actions {
+    grid-area: actions;
+    align-self: end;
+        justify-content: flex-end;
+    flex-direction: row;
+    gap: 8px;
+    padding-top: 8px;
+            border-top: 1px solid var(--border);
+  }
+
+  .inv-actions .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* כרטיס: אותו גריד ואותם אפקטים */
+.invoice-card{
+  position:relative; display:grid;
+  grid-template-columns:auto 1fr auto;
+  grid-template-areas:"price meta actions";
+  gap:14px; padding:16px;
+  background:var(--bg-surface); border:1px solid var(--border);
+  border-radius:16px; transition:all .2s ease; align-items:start;
+}
+.invoice-card:hover{
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.12);
+  border-color:var(--primary);
+}
+
+/* מעגל אייקון = כמו .disp-price */
+.invoice-card .icn{
+  grid-area:price; width:80px; height:80px; border-radius:50%;
+  background:linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  color:#fff; box-shadow:0 4px 12px rgba(59,130,246,.3);
+}
+.invoice-card .icn i{ font-size:1.6rem; }
+.invoice-card .icn .num{ font-size:1.1rem; font-weight:800; line-height:1.2; }
+.invoice-card .icn .lbl{ font-size:.7rem; opacity:.9; margin-top:2px; }
+
+/* מטא */
+.invoice-card .meta{
+  grid-area:meta; display:flex; flex-direction:column; gap:8px; min-width:0;
+}
+.invoice-card .meta .name{
+  font-size:1.05rem; font-weight:700; color:var(--text);
+  display:flex; align-items:center; gap:8px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.invoice-card .meta .sub{
+  font-size:.9rem; color:var(--text-secondary);
+  display:inline-flex; align-items:center; gap:6px;
+}
+
+/* פעולות: משכפלים 1:1 את עמודת האקשנים של הפיזורים */
+.inv-actions{
+  grid-area:actions; display:flex; flex-direction:column; gap:8px;
+}
+.inv-actions .icon-btn{
+  width:40px; height:40px; border-radius:12px; border:1px solid var(--border);
+  background:var(--bg); display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .2s ease; color:var(--text);
+}
+.inv-actions .icon-btn:hover{
+  transform:scale(1.05); box-shadow:0 4px 12px rgba(0,0,0,.15);
+}
+.inv-actions .icon-btn.danger{ color:var(--error); }
+.inv-actions .icon-btn.danger:hover{
+  background:var(--error); color:#fff; border-color:var(--error);
+}
+
+/* ריספונסיביות – בדיוק כמו בפיזורים */
+@media (max-width:640px){
+  #section-invoices .card-header .header-filters,
+  .invoices-toolbar{ flex-direction:column; align-items:stretch; }
+  #section-invoices .card-header .header-filters .search-box,
+  #section-invoices .card-header .header-filters .btn,
+  .invoices-toolbar .search-box,
+  .invoices-toolbar .btn{ width:100%; }
+
+  .invoice-card{
+    grid-template-columns:auto 1fr;
+    grid-template-rows:auto auto;
+    grid-template-areas:
+      "price meta"
+      "actions actions";
+    gap:12px;
+  }
+  .invoice-card .icn{ width:70px; height:70px; }
+}
+@media (max-width:400px){
+  .invoice-card .icn{ width:60px; height:60px; }
+  .invoice-card .meta .name{ font-size:.95rem; }
+  .invoices-list, #invoicesList{ gap:12px; padding:12px; }
+}
+
+
+.card-body #invoicesList{
+  max-height: 400px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* הסקרול-בר: רק ה"קו", בלי רקע (WebKit) */
+.card-body #invoicesList::-webkit-scrollbar{ width: 8px; background: transparent; }
+.card-body #invoicesList::-webkit-scrollbar-track{ background: transparent !important; }
+.card-body #invoicesList::-webkit-scrollbar-thumb{
+  background: var(--scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.card-body #dispersionsList{
+  max-height: 400px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* הסקרול-בר: רק ה"קו", בלי רקע (WebKit) */
+.card-body #dispersionsList::-webkit-scrollbar{ width: 8px; background: transparent; }
+.card-body #dispersionsList::-webkit-scrollbar-track{ background: transparent !important; }
+.card-body #dispersionsList::-webkit-scrollbar-thumb{
+  background: var(--scroll-thumb);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}/* ===== V2 Enhancements (non-breaking) ===== */
+
+/* 1) כותרת רספונסיבית + spacing עדין */
+.header { gap: 12px; }
+.header-content { min-width: 220px; }
+.header-actions { display:flex; gap:12px; flex-wrap:wrap; }
+
+/* 2) מצב hover/active עקבי לכל הכפתורים הרגילים */
+.btn, .btn-outline, .btn-primary {
+  transition: transform .15s ease, box-shadow .2s ease, background .2s;
+}
+.btn:hover, .btn-outline:hover, .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+
+/* 3) קלפים – שדרוג עדין של elevation */
+.card {
+  box-shadow:
+    0 8px 16px rgba(0,0,0,.10),
+    0 3px  6px rgba(0,0,0,.07);
+}
+.card:hover { box-shadow: 0 10px 28px rgba(0,0,0,.14); }
+
+/* 4) קלטים – מצב פוקוס ברור ונקי */
+input[type="text"], input[type="search"], input[type="email"],
+input[type="tel"], input[type="number"], input[type="date"],
+input[type="month"], select {
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+input:focus, select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.25);
+  outline: none;
+}
+
+/* 5) סרגלי כלים "דביקים" (חשבוניות/פיזורים) */
+.invoices-toolbar,
+.dispersions-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: saturate(1.2) blur(4px);
+}
+
+/* 6) חיפוש – איקון מיושר גמיש */
+.search-box input { min-width: 220px; height: 40px; border-radius: 12px; }
+.search-box i { right: 12px; }
+
+/* 7) רשימות ארוכות – ריווח נעים */
+.invoices-list, #invoicesList,
+.dispersions-list, #dispersionsList {
+  gap: 18px;
+}
+
+/* 8) כרטיסי חשבונית/פיזור – מצבי ריחוף עקביים */
+.invoice-card:hover, .disp-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+/* 9) ניווט צד במובייל – כניסה חלקה, כפתור יציאה נשאר */
+@media (max-width: 768px) {
+  .sidebar { box-shadow: -8px 0 24px rgba(0,0,0,.22); }
+  .main-content { padding-bottom: 72px; } /* מקום לניווט התחתון */
+}
+
+
+
+
+
+/* 11) modal קטן / צפוף – אחידות ריווח */
+.modal-content.small { max-width: 480px; }
+.modal .form-row.same-w > * { width: 100%; }
+
+/* 12) כפתורי אייקון קטנים (שימושי ברשימות) */
+.icon-btn { transition: transform .12s ease, box-shadow .2s ease; }
+.icon-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(0,0,0,.16); }
+
+/* 13) מצב “טעינה” לכפתורים (שימושי עם #refreshAllBtn) */
+.btn.loading, #refreshAllBtn.loading, .theme-toggle.loading {
+  pointer-events: none; opacity: .8;
+}
+.btn.loading i, #refreshAllBtn.loading i, .theme-toggle.loading i { animation: spin 1s linear infinite; }
+@keyframes spin { from{transform: rotate(0)} to{transform: rotate(360deg)} }
+
+/* ========================================
+   SUPPLIERS SECTION STYLES
+======================================== */
+
+/* Suppliers Grid */
+.suppliers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-lg);
+  margin-top: var(--space-lg);
+}
+
+.supplier-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.supplier-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary);
+}
+
+.supplier-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-md);
+}
+
+.supplier-name {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.supplier-phone {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.supplier-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.supplier-actions .icon-btn {
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-secondary);
+}
+
+.supplier-actions .icon-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.supplier-actions .icon-btn.delete:hover {
+  background: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.supplier-delivery-days {
+  margin: var(--space-md) 0;
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.supplier-delivery-days-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.delivery-days-chips {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.day-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.supplier-products {
+  margin-top: var(--space-md);
+}
+
+.supplier-products-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+}
+
+.products-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.product-item {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  padding: var(--space-xs);
+  background: var(--bg-base);
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.product-item i {
+  color: var(--primary);
+  font-size: 12px;
+}
+
+/* Days Selector in Form */
+.days-selector {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.day-checkbox {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.day-checkbox input[type="checkbox"] {
+  display: none;
+}
+
+.day-checkbox span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-weight: 600;
+  transition: all var(--transition);
+}
+
+.day-checkbox input[type="checkbox"]:checked + span {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.day-checkbox:hover span {
+  border-color: var(--primary);
+}
+
+/* Products Container in Form */
+#productsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.product-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-sm);
+  align-items: start;
+  padding: var(--space-md);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.product-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.product-fields input {
+  width: 100%;
+}
+
+.product-row-actions {
+  display: flex;
+  align-items: center;
+  padding-top: var(--space-xs);
+}
+
+.remove-product-btn {
+  padding: var(--space-xs) var(--space-sm);
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: var(--text-sm);
+}
+
+.remove-product-btn:hover {
+  background: #c0392b;
+  transform: scale(1.05);
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+
+/* ========================================
+   SUPPLIERS - RESPONSIVE (MOBILE)
+======================================== */
+
+@media (max-width: 768px) {
+  /* Grid במובייל */
+  .suppliers-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+  
+  /* כרטיס ספק במובייל */
+  .supplier-card {
+    padding: var(--space-md);
+    margin: 0 var(--space-sm);
+  }
+  
+  .supplier-card-header {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .supplier-name {
+    font-size: var(--text-base);
+    word-break: break-word;
+  }
+  
+  .supplier-phone {
+    font-size: var(--text-xs);
+  }
+  
+  .supplier-actions {
+    margin-top: var(--space-xs);
+  }
+  
+  /* ימי הגעה במובייל */
+  .delivery-days-chips {
+    gap: 4px;
+  }
+  
+  .day-chip {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+  
+  /* מוצרים במובייל */
+  .product-item {
+    font-size: var(--text-xs);
+    padding: 6px;
+  }
+  
+  /* Header actions במובייל */
+  .card-header {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+  
+  .card-header h3 {
+    width: 100%;
+  }
+  
+  .card-header > div {
+    width: 100%;
+  }
+  
+  .search-box {
+    width: 100%;
+  }
+  
+  .search-box input {
+    width: 100%;
+  }
+  
+  #addSupplierBtn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Modal במובייל */
+  #supplierModal .modal-content {
+    max-width: 95vw !important;
+    margin: var(--space-sm);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  
+  .days-selector {
+    gap: 6px;
+  }
+  
+  .day-checkbox span {
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+  }
+  
+  .product-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+  
+  .product-row-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 0;
+  }
+  
+  .remove-product-btn {
+    width: 100%;
+    padding: var(--space-sm);
+  }
+}
+
+/* תיקון כפתורים במובייל */
+@media (max-width: 768px) {
+  .btn {
+    padding: 10px 16px;
+    font-size: 14px;
+  }
+  
+  .modal-actions {
+    flex-direction: column-reverse;
+    gap: var(--space-sm);
+  }
+  
+  .modal-actions .btn {
+    width: 100%;
+  }
+}
+
+/* תיקון bottom-nav במובייל - וידוא שהוא תמיד fixed */
+@media (max-width: 768px) {
+  .bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+  }
+  
+  /* וידוא שה-main content לא מכסה את הניווט */
+  .main-content {
+    padding-bottom: 80px !important;
+  }
+  
+  .content {
+    padding-bottom: var(--space-lg);
+  }
+}
+.order-date-input {
+  padding: 10px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  font-family: inherit;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: all var(--transition);
+  min-width: 200px;
+}
+
+.order-date-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.supplier-order-card {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.products-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.product-order-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+
+.product-order-row:hover {
+  background: var(--bg-surface);
+  border-color: var(--primary);
+}
+
+.product-order-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.product-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  cursor: pointer;
+  user-select: none;
+}
+
+.product-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.product-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.product-unit {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.product-price {
+  color: var(--success);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.product-order-quantity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.quantity-input {
+  width: 100px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-base);
+  text-align: center;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: all var(--transition);
+}
+
+.quantity-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.quantity-input:disabled {
+  background: var(--bg-base);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.order-notes-input {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  resize: vertical;
+  transition: all var(--transition);
+}
+
+.order-notes-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.order-notes label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.select-all-btn {
+  white-space: nowrap;
+}
+
+/* Status filters */
+.status-filters {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.filter-btn:hover {
+  background: var(--bg-surface);
+  border-color: var(--primary);
+}
+
+.filter-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Order cards */
+.order-card {
+  transition: all var(--transition);
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ========================================
+   ORDERS - RESPONSIVE (MOBILE)
+======================================== */
+
+@media (max-width: 768px) {
+  .order-date-input {
+    width: 100%;
+  }
+  
+  .product-order-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+  
+  .product-order-info {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .product-order-quantity {
+    width: 100%;
+  }
+  
+  .quantity-input {
+    width: 100%;
+  }
+  
+  .card-header h3 {
+    font-size: var(--text-base);
+  }
+  
+  .card-header {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .status-filters {
+    width: 100%;
+  }
+  
+  .filter-btn {
+    flex: 1;
+    text-align: center;
+  }
+}
+/* ========================================
+   תיקון גלילה ברשימות במובייל
+======================================== */
+
+@media (max-width: 768px) {
+  /* וידוא שכל הרשימות יכולות לגלול במובייל */
+  .card-body #invoicesList,
+  .card-body #dispersionsList,
+  .team-card .team-list,
+  .logs-card .logs-list,
+  .products-order-list {
+    max-height: 400px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch; /* גלילה חלקה ב-iOS */
+  }
+  
+  /* וידוא שה-card-body עצמו לא חוסם גלילה */
+  .card-body {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+  
+  /* סקרול בר נראה יותר במובייל */
+  .card-body #invoicesList::-webkit-scrollbar,
+  .card-body #dispersionsList::-webkit-scrollbar,
+  .team-card .team-list::-webkit-scrollbar,
+  .logs-card .logs-list::-webkit-scrollbar,
+  .products-order-list::-webkit-scrollbar {
+    width: 8px !important;
+  }
+  
+  .card-body #invoicesList::-webkit-scrollbar-thumb,
+  .card-body #dispersionsList::-webkit-scrollbar-thumb,
+  .team-card .team-list::-webkit-scrollbar-thumb,
+  .logs-card .logs-list::-webkit-scrollbar-thumb,
+  .products-order-list::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb, #94a3b8) !important;
+    border-radius: 8px !important;
+  }
+  
+  /* וידוא שהכרטיסים לא מגבילים גובה */
+  .card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+
+/* ========================================
+   תיקון גלילה ברשימות במובייל
+======================================== */
+
+@media (max-width: 768px) {
+  /* וידוא שכל הרשימות יכולות לגלול במובייל */
+  .card-body #invoicesList,
+  .card-body #dispersionsList,
+  .team-card .team-list,
+  .logs-card .logs-list,
+  .products-order-list {
+    max-height: 60vh !important; /* גובה דינמי לפי מסך */
+    overflow-y: scroll !important; /* תמיד scroll במקום auto */
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important; /* מונע pull-to-refresh */
+    position: relative !important;
+    touch-action: pan-y !important; /* מאפשר רק גלילה אנכית */
+  }
+  
+  /* וידוא שה-card-body עצמו לא חוסם גלילה */
+  .card-body {
+    overflow: visible !important;
+    max-height: none !important;
+    position: relative !important;
+  }
+  
+  /* סקרול בר נראה ברור במובייל */
+  .card-body #invoicesList::-webkit-scrollbar,
+  .card-body #dispersionsList::-webkit-scrollbar,
+  .team-card .team-list::-webkit-scrollbar,
+  .logs-card .logs-list::-webkit-scrollbar,
+  .products-order-list::-webkit-scrollbar {
+    width: 6px !important;
+    background: rgba(0,0,0,0.1) !important;
+  }
+  
+  .card-body #invoicesList::-webkit-scrollbar-thumb,
+  .card-body #dispersionsList::-webkit-scrollbar-thumb,
+  .team-card .team-list::-webkit-scrollbar-thumb,
+  .logs-card .logs-list::-webkit-scrollbar-thumb,
+  .products-order-list::-webkit-scrollbar-thumb {
+    border-radius: 8px !important;
+    background-clip: padding-box !important;
+  }
+  
+  .card {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  
+  /* תיקון bottom-nav - תמיד קבוע למטה עם תמיכה במקלדת */
+  .bottom-nav {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10000 !important;
+    transform: translateZ(0) !important; /* GPU acceleration */
+    will-change: transform !important;
+    backface-visibility: hidden !important;
+  }
+  
+  /* תמיכה בטלפונים עם notch */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    .bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom) !important;
+    }
+  }
+  
+  /* padding למניעת חפיפה עם bottom-nav */
+  body {
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+  
+  .main-content {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
+    margin-bottom: 0 !important;
+  }
+  
+  /* מניעת bounce/overscroll רק בעמוד הראשי - אבל מאפשרים גלילה רגילה */
+  html, body {
+    overscroll-behavior-y: none !important;
+    overflow-x: hidden !important;
+  }
+  
+  body {
+    min-height: 100vh !important;
+  }
+  
+  .content {
+    overscroll-behavior-y: auto !important; /* מאפשר גלילה רגילה */
+    padding-bottom: var(--space-xl) !important;
+  }
+  
+  /* מניעת zoom על double-tap - אבל מאפשרים גלילה */
+  body, .header, .card, .btn {
+    touch-action: manipulation !important;
+  }
+  
+  /* מאפשרים גלילה מלאה ברשימות ובעמוד */
+  .main-content,
+  .content,
+  .card-body #invoicesList,
+  .card-body #dispersionsList,
+  .team-card .team-list,
+  .logs-card .logs-list,
+  .products-order-list {
+    touch-action: pan-y !important;
+  }
+  
+  /* מאפשרים גלילה גם לאלמנטים בתוך הרשימות */
+  .card-body #invoicesList *,
+  .card-body #dispersionsList *,
+  .team-card .team-list *,
+  .logs-card .logs-list *,
+  .products-order-list * {
+    touch-action: inherit !important;
+  }
+}

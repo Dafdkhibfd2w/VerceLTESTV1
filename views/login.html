@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>התחברות | מנהלים ועובדים</title>
+
+  <!-- פונט / אייקונים -->
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+
+  <!-- CSS כללי + CSS ייעודי ל-login -->
+  <link rel="stylesheet" href="/css/style.css"/>
+  <link rel="stylesheet" href="/css/login.css"/>
+
+  <link rel="icon" href="/favicon.ico" />
+</head>
+<body>
+  <main class="login-wrap">
+    <div class="login-card" role="region" aria-label="Login Card">
+
+      <!-- צד אינפורמטיבי -->
+<aside class="side-card" aria-label="ברוך הבא">
+  <h3>ברוך הבא למערכת</h3>
+  <p class="note">
+    כאן תוכל להיכנס לחשבון שלך כמנהל או כעובד.  
+    מנהלים נכנסים עם קוד אימות, ועובדים עם אימייל וסיסמה.
+  </p>
+</aside>
+      <!-- אזור טפסים עם טאבים -->
+
+
+        <!-- טאב מנהל/בעלים (OTP במייל) -->
+
+        <div id="panel-employee" class="tab-panel active" role="tabpanel" aria-labelledby="tab-employee">
+          <h1>מערכת התחברות</h1>
+          <form id="employeeForm" class="form-grid" novalidate>
+            <div class="form-frow row">
+              <label class="required" for="empEmailInput">אימייל</label>
+              <input id="empEmailInput" name="email" type="email" placeholder="name@example.com" autocomplete="username" required />
+            </div>
+            <div class="form-row row invite-extra" style="display:none">
+  <label class="required" for="empNameInput">שם מלא</label>
+  <input id="empNameInput" name="name" type="text" placeholder="דוגמה: יעל כהן" autocomplete="name" />
+</div>
+            <div class="form-row row">
+              <label class="required" for="empPasswordInput">סיסמה</label>
+              <input id="empPasswordInput" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
+            </div>
+            <div class="actions">
+              <button id="empLoginBtn" class="btn" type="submit">התחבר</button>
+              <button id="empForgotBtn" class="btn-link" type="button">שכחתי סיסמה</button>
+              <div id="empHint" class="note" role="status" aria-live="polite"></div>
+            </div>
+          </form>
+        </div>
+    </div>
+  </main>
+
+  <!-- שיכבת טעינה/מצב -->
+  <div id="pageLoader" style="display:none" aria-hidden="true"></div>
+
+  <!-- JS -->
+  <script src="/js/ui.js" defer></script>
+
+  <script src="/js/login-tabs.js" defer></script>
+</body>
+</html>

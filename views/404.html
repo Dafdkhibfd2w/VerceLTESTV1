@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>404 • הדף לא נמצא</title>
+
+  <!-- Heebo (מותר אצלך ב-CSP) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --card: rgba(20, 28, 47, .58);
+      --text: #e6ebff;
+      --muted: #a7b1c7;
+      --primary: 37 99 235;           /* rgb */
+      --border: rgba(255,255,255,.12);
+      --shine: rgba(255,255,255,.25);
+    }
+
+    /* Reset קטן */
+    *{ box-sizing: border-box; }
+    body{
+      margin:0; font-family: Heebo, system-ui, -apple-system, Segoe UI, Arial, sans-serif;
+      color:var(--text); background: var(--bg); overflow-x:hidden;
+    }
+
+    /* רקע חי: גרדיאנט זז + "כוכבים" + בלובים */
+    .stage{
+      position: fixed; inset: 0; z-index:-3;
+      background:
+        radial-gradient(1200px 800px at 85% -10%, rgba(88,101,242,.26), transparent 60%),
+        radial-gradient(800px 600px at 10% 110%, rgba(16,185,129,.18), transparent 60%),
+        radial-gradient(1000px 700px at 50% 30%, rgba(37,99,235,.20), transparent 60%),
+        linear-gradient(180deg, #0b1220 0%, #0b1220 35%, #0e172e 100%);
+      animation: bg-pan 22s linear infinite;
+    }
+    @keyframes bg-pan {
+      0%{ background-position: 0 0, 0 0, 0 0, 0 0; }
+      50%{ background-position: 100px -60px, -80px 40px, 60px -40px, 0 0; }
+      100%{ background-position: 0 0, 0 0, 0 0, 0 0; }
+    }
+
+    .stars{
+      position: fixed; inset: 0; z-index:-2;
+      background-image:
+        radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,.75), transparent 40%),
+        radial-gradient(2px 2px at 80% 60%, rgba(255,255,255,.55), transparent 40%),
+        radial-gradient(1.5px 1.5px at 40% 80%, rgba(255,255,255,.65), transparent 40%),
+        radial-gradient(1.5px 1.5px at 65% 15%, rgba(255,255,255,.55), transparent 40%);
+      background-repeat: no-repeat;
+      animation: twinkle 6s ease-in-out infinite alternate;
+      opacity:.75;
+      filter: drop-shadow(0 0 2px rgba(255,255,255,.2));
+    }
+    @keyframes twinkle {
+      0% { opacity:.45; transform: translateY(0px); }
+      100%{ opacity:.9;  transform: translateY(4px); }
+    }
+
+    .blobs{
+      position: fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden;
+      filter: blur(40px) saturate(130%);
+    }
+    .blob{
+      position:absolute; width:340px; height:340px; border-radius:50%;
+      opacity:.20; transform: translateZ(0);
+      animation: float 22s ease-in-out infinite;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 55%),
+                  radial-gradient(circle at 70% 70%, rgba(255,255,255,.20), transparent 60%),
+                  linear-gradient(135deg, rgba(37,99,235,.9), rgba(139,92,246,.9));
+      mix-blend-mode: screen;
+    }
+    .blob.b1{ left:-120px; top:-80px; animation-delay: -2s; }
+    .blob.b2{ right:-140px; bottom:-120px; animation-delay: -8s;
+      background: linear-gradient(135deg, rgba(16,185,129,.9), rgba(59,130,246,.9));
+    }
+    .blob.b3{ left:50%; top:60%; width:280px; height:280px; transform:translateX(-50%);
+      animation-delay: -14s;
+      background: linear-gradient(135deg, rgba(244,114,182,.85), rgba(99,102,241,.9));
+    }
+    @keyframes float{
+      0%{ transform: translateY(0) scale(1); }
+      50%{ transform: translateY(-26px) scale(1.06); }
+      100%{ transform: translateY(0) scale(1); }
+    }
+
+    /* מעטפת ותיבה */
+    .wrap{ min-height:100svh; display:grid; place-items:center; padding:24px; position:relative; }
+    .card{
+      width:min(720px, 92vw);
+      background: var(--card);
+      border-radius:22px;
+      padding: 28px 26px 24px;
+      border: 1px solid var(--border);
+      box-shadow:
+        0 20px 60px rgba(0,0,0,.45),
+        0 8px 22px rgba(0,0,0,.28),
+        0 0 0 1px rgba(255,255,255,.04);
+      backdrop-filter: blur(14px) saturate(120%);
+      -webkit-backdrop-filter: blur(14px) saturate(120%);
+      transform-style: preserve-3d;
+      will-change: transform, box-shadow;
+    }
+
+    /* כותרת 404 עם Glitch עדין וגרדיאנט טקסט */
+    .title{
+      margin:0 0 8px; display:flex; align-items:center; gap:.6rem; flex-wrap:wrap;
+    }
+    .num404{
+      position:relative; font-weight:800; letter-spacing:.02em;
+      font-size: clamp(42px, 8vw, 88px);
+      line-height:1;
+      background: linear-gradient(135deg, #fff, rgba(255,255,255,.85), rgba(255,255,255,.65));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      text-shadow: 0 8px 30px rgba(0,0,0,.35);
+      isolation:isolate;
+    }
+    /* שכבות glitch */
+    .num404::before,
+    .num404::after{
+      content: attr(data-text);
+      position:absolute; inset:0; pointer-events:none; mix-blend-mode: screen; opacity:.12;
+      filter: blur(.6px);
+    }
+    .num404::before{ transform: translate(1.6px, 0); color: rgb(59,130,246); }
+    .num404::after { transform: translate(-1.6px, 0); color: rgb(16,185,129); }
+    .num404:hover::before{ animation: glitchX .7s steps(2,end) infinite; }
+    .num404:hover::after { animation: glitchX .7s steps(2,end) infinite reverse; }
+    @keyframes glitchX {
+      50%{ transform: translate(1px, 0); }
+      100%{ transform: translate(-1px, 0); }
+    }
+
+    .subtitle{
+      font-weight:600; font-size: clamp(18px, 2.6vw, 22px); color:#d9e0ff; opacity:.95;
+      text-shadow: 0 2px 10px rgba(0,0,0,.2);
+    }
+
+    .desc{
+      margin: 10px 0 18px; color: var(--muted); font-size: 15.5px;
+      opacity:.95;
+    }
+
+    /* כפתורים עם ברק */
+    .actions{ display:flex; gap:12px; flex-wrap:wrap; margin-top:6px; }
+    .btn{
+      --p: var(--primary);
+      position:relative;
+      display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+      padding: 12px 16px; border-radius: 12px; border:1px solid rgba(var(--p), .35);
+      color:#fff; text-decoration:none; cursor:pointer; user-select:none;
+      background: linear-gradient(180deg, rgba(var(--p), .88), rgba(var(--p), .72));
+      box-shadow: 0 12px 28px rgba(var(--p), .35), 0 1px 0 rgba(255,255,255,.08) inset;
+      transition: transform .16s ease, box-shadow .2s ease, border-color .2s ease;
+      overflow:hidden;
+    }
+    .btn::after{
+      content:""; position:absolute; inset:-2px; border-radius: inherit;
+      background:
+        radial-gradient(120px 20px at var(--x, 10%) -10%, var(--shine), transparent 40%),
+        radial-gradient(100px 24px at calc(var(--x, 10%) + 30%) -14%, rgba(255,255,255,.12), transparent 40%);
+      opacity:.0; transition: opacity .2s ease, background-position .2s ease;
+      pointer-events:none;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 18px 36px rgba(var(--p), .42), 0 2px 0 rgba(255,255,255,.1) inset;
+      border-color: rgba(var(--p), .55);
+    }
+    .btn:hover::after{ opacity:.9; }
+    .btn.secondary{
+      background: transparent; color: var(--text);
+      border-color: rgba(255,255,255,.18);
+      box-shadow: none;
+    }
+    .btn.secondary:hover{
+      background: rgba(255,255,255,.04);
+      box-shadow: 0 10px 26px rgba(0,0,0,.24), inset 0 0 0 1px rgba(255,255,255,.12);
+      transform: translateY(-1px);
+    }
+
+    /* פס קישוט ניאון מסביב לכרטיס */
+    .card::before{
+      content:""; position:absolute; inset: -1px; border-radius:22px;
+      background: conic-gradient(from 210deg,
+         rgba(59,130,246,.0) 0%,
+         rgba(59,130,246,.35) 12%,
+         rgba(139,92,246,.35) 28%,
+         rgba(16,185,129,.35) 44%,
+         rgba(59,130,246,.0) 60%,
+         transparent 100%);
+      filter: blur(8px); z-index:-1; opacity:.55;
+      animation: ring 8s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes ring{
+      to{ transform: rotate(1turn); }
+    }
+
+    /* טיל קטן */
+    .rocket{
+      position:absolute; left: clamp(12px, 6vw, 40px); bottom: -10px;
+      width: 74px; height:auto; opacity:.9; filter: drop-shadow(0 10px 14px rgba(0,0,0,.45));
+      animation: bob 3.2s ease-in-out infinite;
+    }
+    @keyframes bob{ 50%{ transform: translateY(-6px) rotate(-1deg);} }
+
+    /* רספונסיביות */
+    @media (max-width: 520px){
+      .actions{ gap:10px; }
+      .btn{ width:100%; }
+      .rocket{ display:none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- שכבות רקע -->
+  <div class="stage"></div>
+  <div class="stars"></div>
+  <div class="blobs">
+    <span class="blob b1"></span>
+    <span class="blob b2"></span>
+    <span class="blob b3"></span>
+  </div>
+
+  <main class="wrap">
+    <section class="card" id="card" aria-label="עמוד לא נמצא">
+      <header class="title">
+        <div class="num404" data-text="404" aria-hidden="true">404</div>
+        <div class="subtitle">הדף לא נמצא</div>
+      </header>
+
+      <p class="desc">
+        ייתכן שהקישור שגוי או שהדף הועבר. אפשר לחזור לדף הבית או להיכנס מחדש.
+      </p>
+
+      <div class="actions">
+        <a class="btn" href="/" id="homeBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-4.5V14.5a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2V21H4.5A1.5 1.5 0 0 1 3 19.5v-9Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          דף הבית
+        </a>
+        <a class="btn secondary" href="/login" id="loginBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15.5 7.5v-2A2.5 2.5 0 0 0 13 3H6.5A2.5 2.5 0 0 0 4 5.5v13A2.5 2.5 0 0 0 6.5 21H13a2.5 2.5 0 0 0 2.5-2.5v-2M10 12h10m0 0-3-3m3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          התחברות
+        </a>
+        <button class="btn secondary" type="button" id="backBtn">
+          ⟲ חזרה
+        </button>
+      </div>
+
+      <!-- רוקט חמוד -->
+      <svg class="rocket" viewBox="0 0 128 128" aria-hidden="true">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#60a5fa"/>
+            <stop offset="1" stop-color="#a78bfa"/>
+          </linearGradient>
+          <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#f59e0b"/>
+            <stop offset="1" stop-color="#ef4444"/>
+          </linearGradient>
+        </defs>
+        <g transform="translate(8,8)">
+          <path d="M52 92c0 8-8 12-12 12 0-10 4-16 12-12Z" fill="url(#fire)">
+            <animate attributeName="d" dur="0.9s" repeatCount="indefinite"
+              values="M52 92c0 8-8 12-12 12 0-10 4-16 12-12Z;
+                      M52 92c0 10-10 14-14 14 2-12 6-18 14-14Z;
+                      M52 92c0 8-8 12-12 12 0-10 4-16 12-12Z"/>
+          </path>
+          <path d="M36 8c20 0 36 16 36 36v20H0V44C0 24 16 8 36 8Z" fill="url(#g1)"/>
+          <circle cx="24" cy="40" r="8" fill="#0ea5e9" stroke="white" stroke-width="2" opacity=".9"/>
+          <rect x="2" y="52" width="68" height="6" rx="3" fill="white" opacity=".75"/>
+        </g>
+      </svg>
+    </section>
+  </main>
+
+  <script>
+    // Tilt עדין לפי תנועת עכבר (בדסקטופ)
+    (function(){
+      const card = document.getElementById('card');
+      let rect = null, raf = null;
+      const set = (x=0,y=0) => {
+        card.style.transform = `perspective(900px) rotateX(${y}deg) rotateY(${x}deg)`;
+      };
+      const handle = (e) => {
+        if (!rect) rect = card.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top  + rect.height/2;
+        const dx = (e.clientX - cx) / (rect.width/2);
+        const dy = (e.clientY - cy) / (rect.height/2);
+        const rx = Math.max(-6, Math.min(6, dx * 6));
+        const ry = Math.max(-6, Math.min(6, -dy * 6));
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => set(rx, ry));
+      };
+      const reset = () => { rect=null; set(0,0); };
+      if (window.matchMedia('(pointer:fine)').matches) {
+        card.addEventListener('mousemove', handle);
+        card.addEventListener('mouseleave', reset);
+      }
+    })();
+
+    // ברק על הכפתור ע"פ מיקום עכבר
+    for (const btn of document.querySelectorAll('.btn')){
+      btn.addEventListener('pointermove', (e)=>{
+        const r = e.currentTarget.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width) * 100;
+        e.currentTarget.style.setProperty('--x', x + '%');
+      });
+    }
+
+    // חזרה אחורה
+    document.getElementById('backBtn')?.addEventListener('click', ()=>{
+      if (history.length > 1) history.back(); else location.href = '/';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+/* ================================
+   LOGIN TABS – stand-alone CSS
+   ================================ */
+
+/* עטיפת עמוד */
+.login-wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* כרטיס רחב עם 2 עמודות במחשב, עמודה אחת במובייל */
+.login-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+
+box-shadow: -2px 2px 18px 5px rgba(0,0,0,0.52);
+-webkit-box-shadow: -2px 2px 18px 5px rgba(0,0,0,0.52);
+-moz-box-shadow: -2px 2px 18px 5px rgba(0,0,0,0.52);
+  transition: 0.3s;
+  padding: var(--space-xl);
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: var(--space-xl);
+}
+
+@media (max-width: 900px) {
+  .login-card {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* אזור הטאבים */
+.tabs {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: var(--space-lg);
+}
+
+/* שורת הטאבים */
+.tab-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--space-sm);
+  background: var(--bg);
+  padding: var(--space-sm);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.tab-btn {
+  position: relative;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: var(--space-md) var(--space-lg);
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), transform var(--transition);
+  text-align: center;
+}
+.tab-btn:hover { color: var(--text); background: var(--bg-hover); }
+.tab-btn[aria-selected="true"] {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+/* תוכן הטאב */
+.tab-panel {
+  display: none;
+  animation: fadeIn .25s ease-out;
+}
+.tab-panel.active { display: block; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* כותרת כרטיס צד */
+.side-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  display: grid;
+  gap: var(--space-md);
+  align-content: start;
+}
+.side-card h3 {
+  margin-bottom: var(--space-sm);
+  font-size: var(--text-xl);
+}
+
+/* טפסים */
+.form-grid {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.form-row { margin: 0; }
+
+.inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+@media (max-width: 520px) { .inline { grid-template-columns: 1fr; } }
+
+/* מקטע קוד אימות */
+#codeBlock.hidden { display: none; }
+#codeBlock:not(.hidden) { display: grid; gap: var(--space-sm); }
+
+/* הודעות */
+.note {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* אזור תחתון */
+.actions {
+  display: grid;
+  gap: var(--space-md);
+}
+.actions .btn-link {
+  background: transparent;
+  color: var(--accent);
+  border: 0;
+  padding: 0;
+  justify-content: start;
+}
+.actions .btn-link:hover { color: var(--accent-hover); }
+
+/* נגישות */
+.tab-btn:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+/* התאמות קלות ל-card הישן כדי שישתלב */
+.card { box-shadow: none; border: 0; padding: 0; }
+.card h2 { margin: 0; text-align: start; }

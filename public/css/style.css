@@ -1,0 +1,1084 @@
+/* =============================================
+   GLOBAL VARIABLES - Deep Blue Professional
+   
+   ============================================= */
+
+/* Chrome/Edge/Safari */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Firefox */
+html, body {
+  scrollbar-width: none;            /* אין פס גלילה */
+  -ms-overflow-style: none;         /* IE/Edge legacy */
+}
+
+:root {
+  --sup-gap: 14px;
+    /* ===== PRIMARY COLORS ===== */
+    --primary: #1e3a5f;              /* כחול נייבי עמוק - כפתורים ראשיים, תפריטים */
+    --primary-hover: #152d4a;        /* hover על כפתורים ראשיים */
+    --primary-light: #2d5f8d;        /* גרסה בהירה יותר לרקעים */
+      --sidebar-w: 280px;
+  --bp-overlay: 1200px; /* מתי הסיידבר הופך לאוברליי */
+    /* ===== SECONDARY COLORS ===== */
+    --secondary: #2d5f8d;            /* כחול בינוני - כפתורים משניים */
+    --secondary-hover: #23507a;      /* hover על כפתורים משניים */
+    --secondary-light: #4a90e2;      /* גרסה בהירה */
+    
+    /* ===== ACCENT ===== */
+    --accent: #4a90e2;               /* כחול בהיר - קישורים, הדגשות */
+    --accent-hover: #3a7bc8;         /* hover על קישורים */
+    --accent-light: #6ba3e8;         /* גרסה בהירה */
+    
+    /* ===== STATUS COLORS ===== */
+    --success: #10b981;              /* ירוק - הצלחה, אישור, שולם */
+    --success-light: #d1fae5;        /* רקע בהיר לתגיות הצלחה */
+    --success-dark: #059669;         /* גרסה כהה */
+    
+    --warning: #f59e0b;              /* כתום - אזהרה, ממתין, בבדיקה */
+    --warning-light: #fef3c7;        /* רקע בהיר לתגיות אזהרה */
+    --warning-dark: #d97706;         /* גרסה כהה */
+    
+    --error: #ef4444;                /* אדום - שגיאה, נדחה, באיחור */
+    --error-light: #fee2e2;          /* רקע בהיר לתגיות שגיאה */
+    --error-dark: #dc2626;           /* גרסה כהה */
+    
+    --info: #3b82f6;                 /* כחול - מידע, הודעות */
+    --info-light: #dbeafe;           /* רקע בהיר להודעות מידע */
+    --info-dark: #2563eb;            /* גרסה כהה */
+    
+    /* ===== BACKGROUND ===== */
+    --bg: #f8fafc;                   /* רקע ראשי של האפליקציה */
+    --bg-surface: #ffffff;           /* רקע כרטיסים, מודלים, טבלאות */
+    --bg-hover: #f1f5f9;             /* רקע hover על שורות/אלמנטים */
+    --bg-alt: #e2e8f0;               /* רקע חלופי, headers */
+    
+    /* ===== TEXT COLORS ===== */
+    --text: #1e293b;                 /* טקסט ראשי - כותרות, תוכן חשוב */
+    --text-secondary: #64748b;       /* טקסט משני - תיאורים, תאריכים */
+    --text-light: #94a3b8;           /* טקסט בהיר - placeholders, הערות */
+    --text-inverse: #ffffff;         /* טקסט על רקע כהה - כפתורים */
+    
+    /* ===== BORDER ===== */
+    --border: #e2e8f0;               /* גבול רגיל - כרטיסים, inputs */
+    --border-hover: #cbd5e1;         /* גבול hover */
+    --border-focus: #4a90e2;         /* גבול focus על inputs */
+    
+    /* ===== SHADOWS ===== */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);         /* צל קטן - כפתורים קטנים */
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);          /* צל רגיל - כרטיסים */
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);     /* צל גדול - מודלים */
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);     /* צל ענק - dropdowns */
+    
+    /* ===== SPACING ===== */
+    --space-xs: 4px;                 /* מרווח זעיר - בין אלמנטים צמודים */
+    --space-sm: 8px;                 /* מרווח קטן - padding בכפתורים קטנים */
+    --space-md: 16px;                /* מרווח בינוני - padding רגיל */
+    --space-lg: 24px;                /* מרווח גדול - בין סקשנים */
+    --space-xl: 32px;                /* מרווח ענק - padding דפים */
+    --space-2xl: 48px;               /* מרווח מקסימלי - margins גדולים */
+    
+    /* ===== BORDER RADIUS ===== */
+    --radius-sm: 4px;                /* רדיוס קטן - inputs, tags קטנים */
+    --radius: 8px;                   /* רדיוס רגיל - כפתורים, inputs */
+    --radius-lg: 12px;               /* רדיוס גדול - כרטיסים */
+    --radius-xl: 16px;               /* רדיוס ענק - מודלים */
+    --radius-full: 9999px;           /* רדיוס מלא - badges עגולים */
+    
+    /* ===== TRANSITIONS ===== */
+    --transition: 250ms ease-in-out; /* אנימציה רגילה - hover, focus */
+    
+    /* ===== FONT SIZES ===== */
+    --text-xs: 0.75rem;              /* 12px - טקסט זעיר */
+    --text-sm: 0.875rem;             /* 14px - טקסט קטן */
+    --text-base: 1rem;               /* 16px - טקסט רגיל */
+    --text-lg: 1.125rem;             /* 18px - טקסט גדול */
+    --text-xl: 1.25rem;              /* 20px - כותרות קטנות */
+    --text-2xl: 1.5rem;              /* 24px - כותרות */
+    --text-3xl: 1.875rem;            /* 30px - כותרות גדולות */
+}
+
+/* =============================================
+   DARK MODE
+   ============================================= */
+[data-theme="dark"] {
+    --primary: #4a90e2;
+    --primary-hover: #6ba3e8;
+    --primary-light: #2d5f8d;
+    
+    --secondary: #2d5f8d;
+    --secondary-hover: #4a90e2;
+    --secondary-light: #1e3a5f;
+    
+    --accent: #6ba3e8;
+    --accent-hover: #8bb8ed;
+    --accent-light: #4a90e2;
+    
+    --success: #22c55e;
+    --success-light: #134e2f;
+    --success-dark: #86efac;
+    
+    --warning: #fbbf24;
+    --warning-light: #78350f;
+    --warning-dark: #fcd34d;
+    
+    --error: #f87171;
+    --error-light: #7f1d1d;
+    --error-dark: #fca5a5;
+    
+    --info: #60a5fa;
+    --info-light: #1e3a8a;
+    --info-dark: #93c5fd;
+    
+    --bg: #0f172a;
+    --bg-surface: #1e293b;
+    --bg-hover: #334155;
+    --bg-alt: #475569;
+    
+    --text: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-light: #94a3b8;
+    --text-inverse: #0f172a;
+    
+    --border: #334155;
+    --border-hover: #475569;
+    --border-focus: #6ba3e8;
+    
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+/* =============================================
+   RESET & BASE STYLES
+   ============================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: 'Heebo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background-color var(--transition), color var(--transition);
+}
+
+/* =============================================
+   GLOBAL INPUT STYLES
+   ============================================= */
+
+/* כל סוגי ה-inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"],
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+textarea,
+select {
+    width: 100%;
+    padding: var(--space-md);
+    font-size: var(--text-base);
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg-surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+    transition: all var(--transition);
+    appearance: none;
+}
+
+/* Placeholder */
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-light);
+    opacity: 1;
+}
+
+/* Focus state */
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+    background: var(--bg-surface);
+}
+
+/* Hover state */
+input:hover:not(:focus):not(:disabled),
+textarea:hover:not(:focus):not(:disabled),
+select:hover:not(:focus):not(:disabled) {
+    border-color: var(--border-hover);
+}
+
+/* Disabled state */
+input:disabled,
+textarea:disabled,
+select:disabled {
+    background: var(--bg-alt);
+    color: var(--text-light);
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Error state */
+input.error,
+textarea.error,
+select.error {
+    border-color: var(--error);
+}
+
+input.error:focus,
+textarea.error:focus,
+select.error:focus {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Success state */
+input.success,
+textarea.success,
+select.success {
+    border-color: var(--success);
+}
+
+input.success:focus,
+textarea.success:focus,
+select.success:focus {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Textarea specific */
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Select specific */
+select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: left 12px center;
+    padding-left: 40px;
+}
+
+/* =============================================
+   GLOBAL LABEL STYLES
+   ============================================= */
+label {
+    display: block;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: var(--space-sm);
+}
+
+label.required::after {
+    content: " *";
+    color: var(--error);
+}
+
+/* =============================================
+   GLOBAL BUTTON STYLES
+   ============================================= */
+button,
+.btn {
+    padding: var(--space-md) var(--space-lg);
+    font-size: var(--text-base);
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-inverse);
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    text-decoration: none;
+    white-space: nowrap;
+    outline: none;
+}
+
+button:hover,
+.btn:hover {
+    background: var(--primary-hover);
+    box-shadow: var(--shadow);
+    transform: translateY(-1px);
+}
+
+button:active,
+.btn:active {
+    transform: translateY(0);
+}
+
+button:disabled,
+.btn:disabled {
+    background: var(--bg-alt);
+    color: var(--text-light);
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+}
+
+/* Button variants */
+.btn-secondary {
+    background: var(--secondary);
+}
+
+.btn-secondary:hover {
+    background: var(--secondary-hover);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+}
+
+.btn-outline:hover {
+    background: var(--primary);
+    color: var(--text-inverse);
+}
+
+.btn-success {
+    background: var(--success);
+}
+
+.btn-success:hover {
+    background: var(--success-dark);
+}
+
+.btn-error {
+    background: var(--error);
+}
+
+.btn-error:hover {
+    background: var(--error-dark);
+}
+
+/* Button sizes */
+.btn-sm {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--text-sm);
+}
+
+.btn-lg {
+    padding: var(--space-lg) var(--space-xl);
+    font-size: var(--text-lg);
+}
+
+/* =============================================
+   FORM UTILITIES
+   ============================================= */
+
+/* Row - קונטיינר לשדה */
+.row {
+    margin-bottom: var(--space-lg);
+}
+
+/* Form group with icon */
+.input-group {
+    position: relative;
+}
+
+.input-group input {
+    padding-right: 48px;
+}
+
+.input-group .icon {
+    position: absolute;
+    right: var(--space-md);
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    pointer-events: none;
+}
+
+/* Helper text */
+.help-text {
+    display: block;
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
+
+.error-text {
+    display: block;
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--error);
+}
+
+.success-text {
+    display: block;
+    margin-top: var(--space-sm);
+    font-size: var(--text-sm);
+    color: var(--success);
+}
+
+/* =============================================
+   CARD COMPONENT
+   ============================================= */
+.card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+box-shadow:
+  0 8px 16px rgba(0,0,0,.12),
+  0 3px  6px rgba(0,0,0,.08),
+  0 0 0 1px rgba(0,0,0,.05);
+    max-width: 450px;
+    width: 100%;
+    margin: 0 auto;
+    transition: 0.3s;
+}
+
+
+
+.card:hover, .stat-card:hover {
+  box-shadow:
+    0 12px 24px rgba(0,0,0,.22),
+    0 6px  12px rgba(0,0,0,.16),
+    0 1px  3px  rgba(0,0,0,.12);
+}
+
+.card h2 {
+    font-size: var(--text-2xl);
+    color: var(--text);
+    margin-bottom: var(--space-xl);
+    text-align: center;
+}
+
+/* =============================================
+   UTILITY CLASSES
+   ============================================= */
+.hidden {
+    display: none !important;
+}
+
+.muted {
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    text-align: center;
+    margin-top: var(--space-lg);
+}
+
+/* Text alignment */
+.text-center {
+    text-align: center;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-left {
+    text-align: left;
+}
+
+/* Margins */
+.mt-sm { margin-top: var(--space-sm); }
+.mt-md { margin-top: var(--space-md); }
+.mt-lg { margin-top: var(--space-lg); }
+.mt-xl { margin-top: var(--space-xl); }
+
+.mb-sm { margin-bottom: var(--space-sm); }
+.mb-md { margin-bottom: var(--space-md); }
+.mb-lg { margin-bottom: var(--space-lg); }
+.mb-xl { margin-bottom: var(--space-xl); }
+
+/* Paddings */
+.p-sm { padding: var(--space-sm); }
+.p-md { padding: var(--space-md); }
+.p-lg { padding: var(--space-lg); }
+.p-xl { padding: var(--space-xl); }
+
+/* Flex utilities */
+.flex {
+    display: flex;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.gap-lg { gap: var(--space-lg); }
+
+/* =============================================
+   LOGIN PAGE SPECIFIC (דוגמה)
+   ============================================= */
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-lg);
+}
+
+#codeBlock.hidden {
+    display: none;
+}
+
+#codeBlock:not(.hidden) {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 768px) {
+    html {
+        font-size: 14px;
+    }
+    
+    .card {
+        padding: var(--space-lg);
+    }
+    
+    button,
+    .btn {
+        width: 100%;
+    }
+}
+
+
+
+.toast-container {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 3000;
+}
+
+.toast {
+  min-width: 280px;
+  max-width: 400px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  animation: dropIn 0.4s ease, fadeOut 0.6s ease 3.5s forwards;
+  background: var(--toast-bg, #2c2c2c);
+}
+
+.toast.success { background: #2ecc71; }
+.toast.error   { background: #e74c3c; }
+.toast.warning { background: #f39c12; }
+.toast.info    { background: #2b6c97; }
+
+.toast i {
+  font-size: 1.2rem;
+}
+
+@keyframes dropIn {
+  from { transform: translateY(-150%); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeOut {
+  to { transform: translateY(-150%); opacity: 0; }
+}
+
+
+.nav-item.disabled { opacity:.5; pointer-events:none; }
+.section.disabled { display:none; }
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;                    /* מעל טוסט (3000) ומעל מודאלים */
+  display: none;                    /* נסתיר כברירת מחדל */
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  background: rgba(0,0,0,0.25);     /* חצי שקוף, עובד יפה גם ב-Light וגם ב-Dark */
+  backdrop-filter: blur(4px);       /* טיפה בלר */
+}
+/* Loading */
+.loading {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--space-xl);
+}
+
+.loading-overlay.active {
+  display: flex;
+}
+
+.loading-card {
+  background: var(--bg-surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xl);
+  min-width: 260px;
+  max-width: 360px;
+  width: 100%;
+  text-align: center;
+}
+
+.loading-spinner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* שלושה צדדים שקופים, שני צדדים בצבע → אפקט סיבוב ברור */
+  border: 4px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: var(--accent);
+  margin: 0 auto var(--space-lg);
+  animation: spin 0.8s linear infinite;
+  will-change: transform;
+}
+
+.loading-text {
+  font-weight: 700;
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-sm);
+}
+
+.loading-subtext {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* פס התקדמות דקורטיבי */
+.loading-bar {
+  position: relative;
+  margin-top: var(--space-lg);
+  height: 4px;
+  width: 100%;
+  background: var(--bg-alt);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+.loading-bar::before {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -40%;                 /* מוחבא משמאל בדיוק לפי רוחב הפס (40%) */
+  width: 40%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: var(--radius-full);
+  animation: slide-left 1.2s ease-in-out infinite;
+  will-change: left;
+}
+@keyframes slide-left {
+  from { left: -40%; opacity: .85; } /* מתחיל מחוץ לשמאל */
+  to   { left: 100%;  opacity: .85; } /* יוצא מימין */
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes loading-slide {
+  0%   { transform: translateX(-100%); opacity: .8; } /* מוחבא משמאל (רוחב הפס) */
+  100% { transform: translateX(350%); opacity: .8; }  /* מוחבא מימין (100%+40%=140% מסילה = 350% פס; -100%→+250%) */
+}
+
+/* Reduce Motion support */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner,
+  .loading-bar::before {
+    animation: none;
+  }
+}
+.loading-overlay.force-anim .loading-spinner {
+  animation: spin 0.8s linear infinite !important;
+}
+.loading-overlay.force-anim .loading-bar::before {
+  animation: loading-slide 1.2s ease-in-out infinite !important;
+}
+
+body.loading {
+  overflow: hidden;
+}
+
+/* =============================================
+   BOTTOM NAV - Modern App Style 2024 🚀
+   ============================================= */
+
+.bottom-nav{
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 5000;
+  display: none;
+  background: linear-gradient(to top, var(--bg-surface), var(--bg-surface) 90%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px max(16px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+  box-shadow: 
+    0 -10px 30px rgba(0, 0, 0, 0.08),
+    0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 768px){
+  .bottom-nav{ 
+    display: grid;
+    grid-template-columns: 1fr 1fr 80px 1fr 1fr;
+    align-items: center;
+    gap: 4px;
+  }
+  body { padding-bottom: 95px; }
+}
+
+.bottom-nav .nav-tab{
+  -webkit-tap-highlight-color: transparent;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-lg);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.bottom-nav .nav-tab i{ 
+  font-size: 22px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+/* Active state - indicator dot */
+.bottom-nav .nav-tab[aria-current="page"]::after,
+.bottom-nav .nav-tab.active::after{
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.bottom-nav .nav-tab[aria-current="page"],
+.bottom-nav .nav-tab.active{
+  color: var(--primary);
+}
+
+.bottom-nav .nav-tab[aria-current="page"] i,
+.bottom-nav .nav-tab.active i{
+  transform: translateY(-2px);
+  filter: drop-shadow(0 2px 4px rgba(74, 144, 226, 0.3));
+}
+
+/* =============================================
+   CENTER FAB BUTTON - Floating Action Button
+   ============================================= */
+
+.bottom-nav .nav-tab-plus {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a90e2 0%, #2d5f8d 100%);
+  color: white !important;
+  box-shadow: 
+    0 8px 24px rgba(74, 144, 226, 0.4),
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  border: none;
+  padding: 0;
+  margin: -28px auto 0;
+  position: relative;
+  transform: translateY(0);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-nav .nav-tab-plus::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(74, 144, 226, 0.2), rgba(45, 95, 141, 0.2));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.bottom-nav .nav-tab-plus:active::before {
+  opacity: 1;
+}
+
+.bottom-nav .nav-tab-plus i {
+  font-size: 24px;
+  font-weight: 900;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.bottom-nav .nav-tab-plus span {
+  display: none;
+}
+
+.bottom-nav .nav-tab-plus:active {
+  transform: translateY(2px) scale(0.92);
+  box-shadow: 
+    0 4px 12px rgba(74, 144, 226, 0.3),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.bottom-nav .nav-tab-plus:active i {
+  transform: rotate(90deg);
+}
+
+/* More/Settings button */
+.bottom-nav .nav-tab-more {
+  color: var(--text-light);
+}
+
+/* Disabled state */
+.bottom-nav .nav-tab.disabled,
+.bottom-nav .nav-tab[aria-disabled="true"]{
+  opacity: .35;
+  pointer-events: none;
+}
+
+/* Tap animation */
+.bottom-nav .nav-tab:active:not(.nav-tab-plus){
+  transform: scale(0.9);
+}
+
+/* Ripple effect - modernized */
+.bottom-nav .nav-tab::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.bottom-nav .nav-tab:active::before {
+  width: 120%;
+  height: 120%;
+  opacity: 0.3;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .bottom-nav {
+  background: linear-gradient(to top, rgba(30, 41, 59, 0.95), rgba(30, 41, 59, 0.9) 90%, transparent);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .bottom-nav .nav-tab-plus {
+  box-shadow: 
+    0 8px 24px rgba(74, 144, 226, 0.5),
+    0 4px 12px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Popup Menu Styles */
+.popup-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 99999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.popup-menu.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.popup-menu-content {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: var(--space-lg) var(--space-md) calc(var(--space-lg) + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  gap: var(--space-xs);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.15);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.popup-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-base);
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.popup-menu-item:active {
+  transform: scale(0.98);
+  background: var(--bg-hover);
+}
+
+.popup-menu-item i {
+  font-size: 20px;
+  width: 24px;
+  text-align: center;
+  color: var(--primary);
+}
+
+.popup-menu-item span {
+  flex: 1;
+  text-align: right;
+}
+
+/* Badge (אם תרצה באדג' קטן בעתיד) */
+.bottom-nav .nav-tab .badge{
+  position: absolute;
+  top: 4px; 
+  inset-inline-end: 10px;
+  background: var(--error);
+  color: #fff;
+  font-size: 10px;
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+/* Fix bottom nav position and keyboard behavior */
+.bottom-nav {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 5000 !important;
+  transform: translateZ(0);  /* Force GPU acceleration */
+  will-change: transform;
+  backface-visibility: hidden;
+  
+  /* Handle iOS keyboard */
+  position: -webkit-sticky;
+  position: sticky;
+  height: max-content;
+  
+  /* Prevent content from going under navigation */
+  margin-top: auto;
+  
+  /* Ensure it stays above other content */
+  isolation: isolate;
+}
+
+/* Adjust body and main content to work with fixed nav */
+body {
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-content {
+  flex: 1 0 auto;
+  padding-bottom: calc(95px + env(safe-area-inset-bottom)) !important;
+}
+
+/* iOS viewport height fix */
+:root {
+  --vh: 1vh;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  }
+}
+
+/* Prevent elastic scroll */
+html {
+  overflow: hidden;
+  height: 100%;
+}
+
+body {
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  position: relative;
+  height: 100%;
+}
