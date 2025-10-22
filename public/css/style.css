@@ -1050,8 +1050,6 @@ body.loading {
 body {
   min-height: 100vh;
   min-height: -webkit-fill-available;
-  display: flex;
-  flex-direction: column;
 }
 
 .main-content {
@@ -1070,15 +1068,8 @@ body {
   }
 }
 
-/* Prevent elastic scroll */
-html {
-  overflow: hidden;
-  height: 100%;
-}
-
 body {
   overflow-y: auto;
   overscroll-behavior-y: none;
   position: relative;
-  height: 100%;
 }
