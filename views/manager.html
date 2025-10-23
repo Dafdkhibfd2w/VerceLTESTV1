@@ -6,6 +6,10 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
+    <meta 
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    >
     <title>דשבורד - ניהול העסק</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -189,7 +193,7 @@
                 <i class="fas fa-truck"></i>
               </div>
               <div class="stat-content">
-                <div class="stat-value">0</div>
+                <div class="stat-value" id="supplierCount">0</div>
                 <div class="stat-label">ספקים פעילים</div>
               </div>
             </div>
@@ -785,9 +789,7 @@
     <script defer src="/js/dashboard.js"></script>
     <script defer src="/js/suppliers.js"></script>
     <script defer src="/js/orders.js"></script>
-    <nav id="bottomNav" class="bottom-nav" aria-label="ניווט תחתון">
-      <!-- ימולא דינמית ע"י JS -->
-    </nav>
+
     <!-- Add Member Modal -->
     <div
       id="addMemberModal"
@@ -952,5 +954,8 @@
         </div>
       </div>
     </div>
+        <nav id="bottomNav" class="bottom-nav" aria-label="ניווט תחתון">
+      <!-- ימולא דינמית ע"י JS -->
+    </nav>
   </body>
 </html>

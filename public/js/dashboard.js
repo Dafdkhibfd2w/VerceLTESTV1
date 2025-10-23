@@ -698,17 +698,15 @@
 
   async function loadTenant() {
     try {
-      const oldInvites = tenantData?.invites || [];
       const res = await fetch("/api/tenant/info", { credentials: "include" });
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data?.ok) {
-          tenantData = normalizeTenant(data);
-          tenantData.invites = oldInvites;
-          renderTenant();
-          applyFeatureGates();
-          return;
-        }
+        const oldInvites = tenantData?.invites || [];
+        tenantData = normalizeTenant(data);
+        tenantData.invites = oldInvites;
+        renderTenant();
+        applyFeatureGates();
+        return;
       }
     } catch (e) {
       console.error("loadTenant error:", e);
@@ -729,10 +727,12 @@
   function normalizeTenant(payload) {
     const t = payload?.tenant || {};
     const owner = payload?.owner || null;
-    const teamRaw =
-      payload?.teamMembers || payload?.members || payload?.team || [];
+    const teamRaw = payload?.teamMembers || payload?.members || payload?.team || [];
     const team = Array.isArray(teamRaw) ? teamRaw : [];
     const feats = t.features || {};
+    
+    // Fix: Include suppliers in normalized tenant data
+    const suppliers = Array.isArray(t.suppliers) ? t.suppliers : [];
 
     return {
       id: t.id || t._id || null,
@@ -756,17 +756,22 @@
         };
       }),
       features: feats,
+      suppliers: suppliers, // Add suppliers to tenant data
     };
   }
 
   function renderTenant() {
     if (!tenantData) return;
-
+console.log(tenantData);
     const teamArr = Array.isArray(tenantData.team) ? tenantData.team : [];
     const invitesArr = Array.isArray(tenantData.invites)
       ? tenantData.invites
       : [];
-    const combined = getCombinedTeam(teamArr, invitesArr, tenantData.id);
+
+const supplierArr = tenantData.suppliers || [];
+
+
+    const combined = getCombinedTeam(teamArr, invitesArr, supplierArr,tenantData.id);
 
     const nameMain = document.getElementById("tenantName");
     const nameSidebar = document.getElementById("tenantNameSidebar");
@@ -780,9 +785,14 @@
     if (ownerNameEl) ownerNameEl.textContent = tenantData.ownerName || "—";
     if (ownerEmailEl) ownerEmailEl.textContent = tenantData.ownerEmail || "—";
 
+
     renderTeamList(combined);
     const invCount = document.getElementById("inviteCount");
     const teamCount = document.getElementById("teamCount");
+  const supplierCount = document.getElementById("supplierCount");
+  if (supplierCount) {
+    supplierCount.textContent = String(supplierArr.length || 0);
+  }
     if (teamCount) teamCount.textContent = String(combined.length);
     if (invCount) invCount.textContent = String(invitesArr.length);
     const sName = document.getElementById("settingsTenantName");
@@ -1054,17 +1064,20 @@
   }
 
   // ---------- TENANT EDIT MODAL ----------
-  function openEditModal() {
-    const el = document.getElementById("editModal");
-    if (!el) return;
-    document.getElementById("editTenantName").value = tenantData?.name || "";
-    document.getElementById("editTenantAddress").value =
-      tenantData?.address || "";
-    document.getElementById("editTenantPhone").value = tenantData?.phone || "";
-    el.classList.remove("hidden");
-    el.style.display = "flex";
-    document.body.classList.add("modal-open");
-  }
+function openEditModal() {
+  const modal = document.getElementById("editModal");
+  if (!modal) return;
+  
+  // Pre-fill the form fields
+  document.getElementById("editTenantName").value = tenantData?.name || "";
+  document.getElementById("editTenantAddress").value = tenantData?.address || "";
+  document.getElementById("editTenantPhone").value = tenantData?.phone || "";
+  
+  // Show the modal
+  modal.classList.remove("hidden");
+  modal.style.display = "flex";
+  document.body.classList.add("modal-open");
+}
 
   function closeEditModal() {
     const el = document.getElementById("editModal");
@@ -2095,7 +2108,7 @@
     }
   });
 
-  function confirmDeleteDispersion(id, cardEl) {
+   function confirmDeleteDispersion(id, cardEl) {
     if (!confirm("למחוק את הפיזור?")) return;
     (async () => {
       try {
@@ -2195,6 +2208,53 @@
   document.addEventListener("DOMContentLoaded", async () => {
     initTheme();
 
+    // Move the theme toggle initialization outside the promise chain
+    // Add this right after the DOMContentLoaded event listener starts
+
+    const themeToggleBtn = document.querySelector(".theme-toggle");
+    if (themeToggleBtn) {
+      themeToggleBtn.addEventListener("click", () => {
+        toggleTheme();
+      });
+    }
+  const editTenantBtn = document.getElementById("editTenantBtn");
+  if (editTenantBtn) {
+    editTenantBtn.addEventListener("click", () => {
+      openEditModal();
+      console.log('adir elad');
+    });
+  }
+          document
+          .querySelector(".btn-logout")
+          ?.addEventListener("click", logout);
+        document
+          .querySelector("#editModal .modal-close")
+          ?.addEventListener("click", closeEditModal);
+        document
+          .querySelector("#editModal .modal-footer .btn.btn-primary")
+          ?.addEventListener("click", saveTenantChanges);
+        document
+          .querySelector(".theme-toggle")
+          ?.addEventListener("click", toggleTheme);
+        const themeOpts = document.querySelectorAll(
+          ".theme-options .theme-option",
+        );
+        if (themeOpts[0])
+          themeOpts[0].addEventListener("click", () => setTheme("light"));
+        if (themeOpts[1])
+          themeOpts[1].addEventListener("click", () => setTheme("dark"));
+
+
+        document
+          .querySelector(
+            "#section-settings .card:nth-of-type(1) .btn.btn-primary",
+          )
+          ?.addEventListener("click", saveBusinessSettings);
+        document
+          .querySelector(
+            "#section-settings .card:nth-of-type(2) .btn.btn-primary",
+          )
+          ?.addEventListener("click", savePersonalSettings);
     await withLoader(
       async () => {
         const meRes = await fetch("/me", { credentials: "include" });
@@ -2322,40 +2382,6 @@
           });
         }
 
-        document
-          .querySelector(".theme-toggle")
-          ?.addEventListener("click", toggleTheme);
-        const themeOpts = document.querySelectorAll(
-          ".theme-options .theme-option",
-        );
-        if (themeOpts[0])
-          themeOpts[0].addEventListener("click", () => setTheme("light"));
-        if (themeOpts[1])
-          themeOpts[1].addEventListener("click", () => setTheme("dark"));
-        document
-          .querySelector(".btn-logout")
-          ?.addEventListener("click", logout);
-
-        document
-          .getElementById("editTenantBtn")
-          ?.addEventListener("click", openEditModal);
-        document
-          .querySelector("#editModal .modal-close")
-          ?.addEventListener("click", closeEditModal);
-        document
-          .querySelector("#editModal .modal-footer .btn.btn-primary")
-          ?.addEventListener("click", saveTenantChanges);
-
-        document
-          .querySelector(
-            "#section-settings .card:nth-of-type(1) .btn.btn-primary",
-          )
-          ?.addEventListener("click", saveBusinessSettings);
-        document
-          .querySelector(
-            "#section-settings .card:nth-of-type(2) .btn.btn-primary",
-          )
-          ?.addEventListener("click", savePersonalSettings);
 
         // Mobile-specific initializations
         addTouchFeedback();
@@ -2419,5 +2445,4 @@
   document
     .getElementById("edit_cancel_btn")
     ?.addEventListener("click", closeEditMemberModal);
-  document.getElementById("inv_submit").onclick = onSubmitUpload;
 })();

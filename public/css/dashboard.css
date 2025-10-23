@@ -2234,6 +2234,7 @@ input:focus, select:focus {
   html, body {
     overscroll-behavior-y: none !important;
     overflow-x: hidden !important;
+  min-height: 100dvh;
   }
   
   body {
