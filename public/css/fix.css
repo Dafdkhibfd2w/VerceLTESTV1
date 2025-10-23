@@ -1,0 +1,114 @@
+/* תיקון בעיות bottom-nav במובייל אמיתי */
+
+/* תיקון #1: וידוא שה-bottom-nav יופיע תמיד במובייל */
+@media (max-width: 768px) {
+  .bottom-nav { 
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 80px 1fr 1fr;
+    align-items: center;
+    gap: 4px;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 10000 !important;
+    
+    /* רקע מוצק יותר שיראה טוב גם בטלפון אמיתי */
+    background: var(--bg-surface) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    
+    /* גבול עליון ברור */
+    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    
+    /* padding מותאם לטלפונים עם notch */
+    padding: 8px max(16px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
+    
+    /* צל חזק יותר */
+    box-shadow: 
+      0 -4px 20px rgba(0, 0, 0, 0.15),
+      0 -1px 4px rgba(0, 0, 0, 0.1);
+    
+    /* מניעת בעיות rendering */
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  /* תיקון #2: וידוא ש-body מקבל padding מספיק */
+  body { 
+    padding-bottom: calc(95px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  
+  /* תיקון #3: וידוא ש-main-content לא מכסה את הניווט */
+  .main-content {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* תיקון למצב dark mode - רקע מוצק יותר */
+[data-theme="dark"] .bottom-nav {
+  background: rgb(30, 41, 59) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* תיקון נוסף: וידוא שכל הכפתורים נראים */
+.bottom-nav .nav-tab {
+  /* מינימום גובה וידוא שהכפתורים נראים */
+  min-height: 64px;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* תיקון לכפתור המרכזי (plus) */
+.bottom-nav .nav-tab-plus {
+  width: 56px !important;
+  height: 56px !important;
+  margin: -28px auto 0 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* וידוא שהאייקונים נראים */
+.bottom-nav .nav-tab i {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* תיקון למקרה של טלפונים עם viewport בעייתי */
+@supports (height: 100dvh) {
+  @media (max-width: 768px) {
+    body {
+      min-height: 100dvh !important;
+    }
+  }
+}
+
+/* תיקון viewport למובייל */
+@media (max-width: 768px) {
+  html {
+    /* מניעת zoom על double tap */
+    touch-action: manipulation;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* וידוא שהתוכן לא גולל מעבר לניווט */
+  .content {
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
+/* Debug mode - הסר את זה אחרי שתוודא שהכל עובד */
+/* 
+@media (max-width: 768px) {
+  .bottom-nav {
+    border: 3px solid red !important;
+  }
+  
+  .bottom-nav .nav-tab {
+    border: 1px solid yellow !important;
+  }
+}
+*/
