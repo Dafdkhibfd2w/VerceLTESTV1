@@ -746,27 +746,42 @@ body.loading {
 .bottom-nav{
   position: fixed;
   bottom: 0;
-  inset-inline: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: auto;
+  max-height: 95px;
   z-index: 5000;
-  display: none;
-  background: linear-gradient(to top, var(--bg-surface), var(--bg-surface) 90%, transparent);
+  background: var(--bg-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 8px max(16px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right));
-  box-shadow: 
-    0 -10px 30px rgba(0, 0, 0, 0.08),
-    0 -2px 10px rgba(0, 0, 0, 0.05);
+  display: none;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 @media (max-width: 768px){
-  .bottom-nav{ 
+  .bottom-nav {
     display: grid;
-    grid-template-columns: 1fr 1fr 80px 1fr 1fr;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
     align-items: center;
-    gap: 4px;
+    padding-bottom: max(env(safe-area-inset-bottom), 16px);
   }
-  body { padding-bottom: 95px; }
+
+  body {
+    padding-bottom: calc(95px + env(safe-area-inset-bottom));
+  }
+}
+
+/* תיקון ל-iOS */
+@supports (-webkit-touch-callout: none) {
+  .bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 20px);
+  }
 }
 
 .bottom-nav .nav-tab{
@@ -1072,73 +1087,4 @@ body {
   overflow-y: auto;
   overscroll-behavior-y: none;
   position: relative;
-}
-
-/* Bottom Nav Fixes */
-.bottom-nav {
-  display: none; /* מוסתר כברירת מחדל */
-}
-
-@media (max-width: 768px) {
-  .bottom-nav {
-    display: grid !important; /* מוצג במובייל */
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    z-index: 10000 !important;
-    
-    /* תיקון לבעיית המקלדת */
-    position: -webkit-sticky !important;
-    position: sticky !important;
-    
-    /* תיקונים לביצועים */
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-    
-    /* תיקון ל-iOS */
-    padding-bottom: max(env(safe-area-inset-bottom), 20px);
-  }
-
-  /* תיקון גובה המסך */
-  :root {
-    --vh: 1vh;
-  }
-
-  html, body {
-    height: -webkit-fill-available;
-    height: 100dvh; /* דינמי viewport height */
-    overscroll-behavior-y: none;
-  }
-
-  /* תיקון תצוגה */
-  body {
-    padding-bottom: calc(95px + env(safe-area-inset-bottom));
-  }
-
-  .main-content {
-    padding-bottom: calc(95px + env(safe-area-inset-bottom));
-    min-height: 100dvh;
-  }
-
-  /* וידוא שהתפריט נשאר מעל תוכן אחר */
-  .bottom-nav {
-    isolation: isolate;
-  }
-}
-
-/* פיקס ספציפי למכשירי iOS */
-@supports (-webkit-touch-callout: none) {
-  .bottom-nav {
-    position: fixed !important;
-  }
-}
-
-/* פיקס לדפדפנים במובייל */
-@media (hover: none) and (pointer: coarse) {
-  .bottom-nav {
-    display: grid !important;
-  }
 }
