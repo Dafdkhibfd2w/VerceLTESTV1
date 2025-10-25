@@ -2445,4 +2445,31 @@ function openEditModal() {
   document
     .getElementById("edit_cancel_btn")
     ?.addEventListener("click", closeEditMemberModal);
+
+  document.addEventListener('DOMContentLoaded', () => {
+  // תיקון גובה המסך למובייל
+  function setVH() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+  
+  // הפעלה בטעינה
+  setVH();
+  
+  // הפעלה בשינוי גודל המסך
+  window.addEventListener('resize', () => {
+    setVH();
+  });
+
+  // תיקון למקלדת במובייל
+  window.visualViewport?.addEventListener('resize', () => {
+    if (window.visualViewport.height < window.innerHeight) {
+      // המקלדת פתוחה
+      document.body.style.height = window.visualViewport.height + 'px';
+    } else {
+      // המקלדת סגורה
+      document.body.style.height = '100%';
+    }
+  });
+});
 })();
