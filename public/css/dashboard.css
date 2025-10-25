@@ -2196,17 +2196,7 @@ input:focus, select:focus {
   }
   
   /* תיקון bottom-nav - תמיד קבוע למטה עם תמיכה במקלדת */
-  .bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 10000 !important;
-    transform: translateZ(0) !important; /* GPU acceleration */
-    will-change: transform !important;
-    backface-visibility: hidden !important;
-  }
-  
+
 
   
   /* padding למניעת חפיפה עם bottom-nav */
