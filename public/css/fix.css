@@ -2,30 +2,7 @@
 
 /* תיקון #1: וידוא שה-bottom-nav יופיע תמיד במובייל */
 @media (max-width: 768px) {
-  .bottom-nav { 
-    display: grid !important;
-    grid-template-columns: 1fr 1fr 80px 1fr 1fr;
-    align-items: center;
-    gap: 4px;
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    /* z-index: 10000 !important; */
-    background: var(--bg-surface) !important;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border, rgba(255, 255, 255, 0.1));
-    /* padding: 8px max(16px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)); */
-    box-shadow: 
-      0 -4px 20px rgba(0, 0, 0, 0.15),
-      0 -1px 4px rgba(0, 0, 0, 0.1);
-    
-    transform: translateZ(0);
-    will-change: transform;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-  }
+
   
   /* תיקון #2: וידוא ש-body מקבל padding מספיק */
   body { 
