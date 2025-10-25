@@ -1845,13 +1845,7 @@ input:focus, select:focus {
 
 /* תיקון bottom-nav במובייל - וידוא שהוא תמיד fixed */
 @media (max-width: 768px) {
-  .bottom-nav {
-    position: fixed !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 9999 !important;
-  }
+
   
   /* וידוא שה-main content לא מכסה את הניווט */
   .main-content {
@@ -2213,12 +2207,7 @@ input:focus, select:focus {
     backface-visibility: hidden !important;
   }
   
-  /* תמיכה בטלפונים עם notch */
-  @supports (padding: env(safe-area-inset-bottom)) {
-    .bottom-nav {
-      padding-bottom: env(safe-area-inset-bottom) !important;
-    }
-  }
+
   
   /* padding למניעת חפיפה עם bottom-nav */
   body {
