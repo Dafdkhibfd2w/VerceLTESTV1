@@ -36,8 +36,23 @@
   }
 
   function toggleTheme() {
-    const cur = document.documentElement.getAttribute("data-theme") || "light";
-    applyTheme(cur === "dark" ? "light" : "dark");
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    const icon = document.getElementById('themeIcon');
+    if (icon) {
+      icon.className = newTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    }
+    
+    window.showToast?.(
+      newTheme === 'dark' ? 'מצב כהה הופעל' : 'מצב בהיר הופעל',
+      'info',
+      1200
+    );
   }
 
   function setTheme(theme) {
@@ -423,10 +438,10 @@
       case "supplier":
         if (currentSection !== "suppliers") {
           setTimeout(() => {
-            document.getElementById("addSupplierBtn")?.click();
+            openAddSupplierModal();
           }, 200);
         } else {
-          document.getElementById("addSupplierBtn")?.click();
+openAddSupplierModal();
         }
         break;
 
@@ -762,7 +777,7 @@
 
   function renderTenant() {
     if (!tenantData) return;
-console.log(tenantData);
+    console.log(tenantData);
     const teamArr = Array.isArray(tenantData.team) ? tenantData.team : [];
     const invitesArr = Array.isArray(tenantData.invites)
       ? tenantData.invites
@@ -1801,11 +1816,10 @@ function openEditModal() {
 
   function closeExportModal() {
     const modal = document.getElementById("exportModal");
-    if (modal) {
-      modal.classList.add("hidden");
-      modal.style.display = "none";
-      document.body.classList.remove("modal-open");
-    }
+    if (!modal) return;
+    modal.classList.add("hidden");
+    modal.style.display = "none";
+    document.body.classList.remove("modal-open");
   }
 
   function normalizeMonth(raw) {
@@ -2206,22 +2220,15 @@ function openEditModal() {
 
   // ---------- INIT ----------
   document.addEventListener("DOMContentLoaded", async () => {
+    // Initialize theme first
     initTheme();
+    
+    // Connect theme toggle button
 
-    // Move the theme toggle initialization outside the promise chain
-    // Add this right after the DOMContentLoaded event listener starts
-
-    const themeToggleBtn = document.querySelector(".theme-toggle");
-    if (themeToggleBtn) {
-      themeToggleBtn.addEventListener("click", () => {
-        toggleTheme();
-      });
-    }
   const editTenantBtn = document.getElementById("editTenantBtn");
   if (editTenantBtn) {
     editTenantBtn.addEventListener("click", () => {
       openEditModal();
-      console.log('adir elad');
     });
   }
           document
@@ -2230,6 +2237,9 @@ function openEditModal() {
         document
           .querySelector("#editModal .modal-close")
           ?.addEventListener("click", closeEditModal);
+
+        document.querySelector('#editModal .closeee')
+        ?.addEventListener("click", closeEditModal);
         document
           .querySelector("#editModal .modal-footer .btn.btn-primary")
           ?.addEventListener("click", saveTenantChanges);
@@ -2447,29 +2457,8 @@ function openEditModal() {
     ?.addEventListener("click", closeEditMemberModal);
 
   document.addEventListener('DOMContentLoaded', () => {
-  // תיקון גובה המסך למובייל
-  function setVH() {
-    let vh = window.innerHeight * 0.01;
-    document.documentElement.style.setProperty('--vh', `${vh}px`);
-  }
-  
-  // הפעלה בטעינה
-  setVH();
-  
-  // הפעלה בשינוי גודל המסך
-  window.addEventListener('resize', () => {
-    setVH();
-  });
+  // Initialize theme first
+  initTheme();
 
-  // תיקון למקלדת במובייל
-  window.visualViewport?.addEventListener('resize', () => {
-    if (window.visualViewport.height < window.innerHeight) {
-      // המקלדת פתוחה
-      document.body.style.height = window.visualViewport.height + 'px';
-    } else {
-      // המקלדת סגורה
-      document.body.style.height = '100%';
-    }
-  });
 });
 })();
