@@ -236,7 +236,7 @@ body {
   gap: var(--space-md);
 }
 .logs-card .logs-list{
-  max-height: 240px;
+  max-height: 260px;
   overflow-y: auto;
   overflow-x: hidden;
   direction: ltr;           /* שומר את ה-scrollbar מימין */
@@ -524,19 +524,39 @@ body {
   font-size: var(--text-lg);
   padding: 0;
 }
-.pending {
-  display: inline-block;
-  background: var(--warning-bg, #facc15);
-  color: var(--warning-text, #1a1a1a);
-  font-size: 0.8rem;
-  padding: 2px 6px;
-  border-radius: 6px;
-  margin-top: 4px;
+.invite-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  width: 100%;
+  max-width: 260px; /* או 100% אם אתה רוצה שיתפרש לפי גודל ההורה */
 }
-.pending-invite {
-  opacity: 0.8;
-  border: 1px dashed var(--muted);
+
+.invite-row .pending {
+  flex: 1;
+  background: #caa600; /* או הצהוב שלך */
+  color: #000;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  text-align: center;
+  white-space: nowrap;
 }
+
+.invite-row .resend-invite {
+  flex: 1;
+  text-align: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 3px 10px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
 .theme-toggle:hover, #refreshAllBtn:hover {
   background: var(--primary);
   color: var(--text-inverse);
@@ -745,7 +765,7 @@ body {
 
 /* רשימה – גלילה אנכית בלבד, סקרול מימין, בלי רקע למסילה */
 .team-card .team-list{
-  max-height: 240px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
+  max-height: 280px;          /* הצג ~3 כרטיסים; שנה לפי הצורך */
   overflow-y: auto;
   overflow-x: hidden;
   direction: ltr;             /* הסקרול-בר בצד ימין גם ב-RTL */
@@ -1855,7 +1875,6 @@ input:focus, select:focus {
   
   /* וידוא שה-main content לא מכסה את הניווט */
   .main-content {
-    padding-bottom: 80px !important;
   }
   
   .content {

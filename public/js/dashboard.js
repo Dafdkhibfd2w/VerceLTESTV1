@@ -852,13 +852,15 @@ function normalizeTenant(payload) {
             : "עובד";
 
     const statusLabel = m.status === "pending" 
-      ? `<span class="pending">בהמתנה לאישור
-
-         </span>
-          <button class="btn btn-sm btn-outline resend-invite" data-id="${m.id}">
-           <i class="fas fa-paper-plane"></i> 
-           שלח שוב
-         </button>`
+      ? `
+<div class="invite-row">
+  <span class="pending">בהמתנה לאישור</span>
+  <button class="btn btn-sm btn-outline resend-invite" id='a' data-id="${m.id}">
+    <i class="fas fa-paper-plane"></i>
+    שלח שוב
+  </button>
+</div>
+         `
       : "";
 
     const isOwner = role === "owner";
