@@ -1066,3 +1066,32 @@ body {
   overscroll-behavior-y: none;
   position: relative;
 }
+
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--warning-bg, #facc15);
+  color: var(--warning-text, #1a1a1a);
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-top: 4px;
+}
+
+.resend-invite {
+  padding: 2px 8px !important;
+  font-size: 0.75rem !important;
+  height: auto !important;
+  white-space: nowrap;
+}
+
+.resend-invite i {
+  font-size: 0.75rem;
+  margin-left: 4px;
+}
+
+.resend-invite:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

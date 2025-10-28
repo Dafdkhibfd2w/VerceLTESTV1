@@ -711,83 +711,95 @@ openAddSupplierModal();
     if (roleEl) roleEl.textContent = user.role || "משתמש";
   }
 
-  async function loadTenant() {
-    try {
-      const res = await fetch("/api/tenant/info", { credentials: "include" });
-      const data = await res.json();
-      if (res.ok) {
-        const oldInvites = tenantData?.invites || [];
-        tenantData = normalizeTenant(data);
-        tenantData.invites = oldInvites;
-        renderTenant();
-        applyFeatureGates();
-        return;
-      }
-    } catch (e) {
-      console.error("loadTenant error:", e);
-    }
-
-    tenantData = {
-      name: "העסק שלי",
-      createdAt: new Date().toISOString(),
-      settings: {},
-      features: {},
-      team: [],
-      invites: tenantData?.invites || [],
-    };
-    renderTenant();
-    applyFeatureGates();
-  }
-
-  function normalizeTenant(payload) {
-    const t = payload?.tenant || {};
-    const owner = payload?.owner || null;
-    const teamRaw = payload?.teamMembers || payload?.members || payload?.team || [];
-    const team = Array.isArray(teamRaw) ? teamRaw : [];
-    const feats = t.features || {};
+async function loadTenant() {
+  try {
+    // 1. טען מידע בסיסי
+    const infoRes = await fetch("/api/tenant/info", { credentials: "include" });
+    const data = await infoRes.json();
     
-    // Fix: Include suppliers in normalized tenant data
-    const suppliers = Array.isArray(t.suppliers) ? t.suppliers : [];
+    if (!infoRes.ok) throw new Error(data?.message || `HTTP ${infoRes.status}`);
+    
+    // 2. נרמל את המידע הבסיסי
+    tenantData = normalizeTenant(data);
+
+
+    // 4. רנדר הכל מחדש
+    renderTenant();
+    renderTeamList(getCombinedTeam(tenantData.team, tenantData.invites));
+    applyFeatureGates();
+
+    return tenantData;
+  } catch (e) {
+    console.error("loadTenant error:", e);
+    showToast?.("שגיאה בטעינת נתונים", "error");
+  }
+}
+function normalizeTenant(payload) {
+  const t = payload?.tenant || {};
+  const owner = payload?.owner || null;
+
+  const rawCombined = Array.isArray(payload?.team) 
+    ? payload.team 
+    : (Array.isArray(payload?.teamMembers) ? payload.teamMembers 
+    : (Array.isArray(payload?.members) ? payload.members : []));
+
+  const mapMember = (m) => {
+    const roleFromMembership = (m.memberships || []).find(
+      (mm) => String(mm.tenant) === String(t.id || t._id),
+    )?.role;
 
     return {
-      id: t.id || t._id || null,
-      name: t.name || "העסק שלי",
-      createdAt: t.createdAt || new Date().toISOString(),
-      settings: t.settings || {},
-      ownerName: owner?.name || "—",
-      ownerEmail: owner?.email || "—",
-      address: t.settings?.address || "",
-      phone: t.settings?.phone || "",
-      team: team.map((m) => {
-        const roleFromMembership = (m.memberships || []).find(
-          (mm) => String(mm.tenant) === String(t.id || t._id),
-        )?.role;
-        return {
-          id: m.id || m._id,
-          name: m.name || "",
-          email: m.email || "",
-          role: m.role || roleFromMembership || "employee",
-          status: m.status || "active",
-        };
-      }),
-      features: feats,
-      suppliers: suppliers, // Add suppliers to tenant data
+      id: m.id || m._id,
+      name: m.name || (m.email?.split('@')[0]) || "",
+      email: m.email || "",
+      role: (m.role || roleFromMembership || "employee"),
+      status: m.status || "active",
+      type: m.type || (m.status === 'pending' ? 'invite' : 'member'),
     };
-  }
+  };
+
+  // פיצול לפי type/status
+  const members = rawCombined
+    .filter(x => (x.type === 'member') || (x.status !== 'pending'))
+    .map(mapMember);
+
+  const invites = rawCombined
+    .filter(x => (x.type === 'invite') || (x.status === 'pending'))
+    .map(mapMember);
+
+  const feats = t.features || {};
+  const suppliers = Array.isArray(t.suppliers) ? t.suppliers : [];
+
+  return {
+    id: t.id || t._id || null,
+    name: t.name || "העסק שלי",
+    createdAt: t.createdAt || new Date().toISOString(),
+    settings: t.settings || {},
+    ownerName: owner?.name || "—",
+    ownerEmail: owner?.email || "—",
+    address: t.settings?.address || "",
+    phone: t.settings?.phone || "",
+    team: members,      // רק פעילים כאן
+    invites,            // והזמנות כאן
+    features: feats,
+    suppliers
+  };
+}
 
   function renderTenant() {
     if (!tenantData) return;
-    console.log(tenantData);
+    
+    // וודא שיש לנו מערכים תקינים
     const teamArr = Array.isArray(tenantData.team) ? tenantData.team : [];
-    const invitesArr = Array.isArray(tenantData.invites)
-      ? tenantData.invites
-      : [];
-
-const supplierArr = tenantData.suppliers || [];
-
-
-    const combined = getCombinedTeam(teamArr, invitesArr, supplierArr,tenantData.id);
-
+    const invitesArr = Array.isArray(tenantData.invites) ? tenantData.invites : [];
+    
+    console.log('Team members:', teamArr);
+    console.log('Pending invites:', invitesArr);
+    
+    // שלב את העובדים וההזמנות
+    const combined = getCombinedTeam(teamArr, invitesArr);
+  
+    // המשך הרינדור הרגיל
     const nameMain = document.getElementById("tenantName");
     const nameSidebar = document.getElementById("tenantNameSidebar");
     const createdEl = document.getElementById("tenantCreated");
@@ -801,13 +813,12 @@ const supplierArr = tenantData.suppliers || [];
     if (ownerEmailEl) ownerEmailEl.textContent = tenantData.ownerEmail || "—";
 
 
+    // הצג את הרשימה המשולבת
     renderTeamList(combined);
+    
+    // עדכן מונים
     const invCount = document.getElementById("inviteCount");
     const teamCount = document.getElementById("teamCount");
-  const supplierCount = document.getElementById("supplierCount");
-  if (supplierCount) {
-    supplierCount.textContent = String(supplierArr.length || 0);
-  }
     if (teamCount) teamCount.textContent = String(combined.length);
     if (invCount) invCount.textContent = String(invitesArr.length);
     const sName = document.getElementById("settingsTenantName");
@@ -819,6 +830,7 @@ const supplierArr = tenantData.suppliers || [];
       sAddr.value = tenantData.address || "";
     if (sPhone && document.activeElement !== sPhone)
       sPhone.value = tenantData.phone || "";
+    console.log(tenantData);
   }
 
   // ---------- TEAM LIST ----------
@@ -839,10 +851,15 @@ const supplierArr = tenantData.suppliers || [];
             ? "אחמ״ש"
             : "עובד";
 
-    const statusLabel =
-      m.status === "pending"
-        ? '<span class="pending">בהמתנה לאישור</span>'
-        : "";
+    const statusLabel = m.status === "pending" 
+      ? `<span class="pending">בהמתנה לאישור
+
+         </span>
+          <button class="btn btn-sm btn-outline resend-invite" data-id="${m.id}">
+           <i class="fas fa-paper-plane"></i> 
+           שלח שוב
+         </button>`
+      : "";
 
     const isOwner = role === "owner";
     const isInvite = m.type === "invite";
@@ -872,6 +889,24 @@ const supplierArr = tenantData.suppliers || [];
         </div>
       </div>`;
   }
+
+  // הוספת טיפול באירוע לחיצה על כפתור resend
+  document.addEventListener('click', async (e) => {
+    if (e.target.closest('.resend-invite')) {
+      const btn = e.target.closest('.resend-invite');
+      const id = btn.dataset.id;
+      
+      try {
+        btn.disabled = true;
+        await fetchJSON(`/api/team/invites/${id}/resend`, { method: 'POST' });
+        showToast?.("נשלחה תזכורת", "success");
+      } catch (err) {
+        showToast?.(err?.message || "שגיאה בשליחה", "error");
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  });
 
   async function renderTeamList(team = []) {
     const wrap = document.getElementById("teamList");
@@ -1668,24 +1703,68 @@ function openEditModal() {
     }
   }
 
-  function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
-    const teamMap = new Map(
-      (team || []).map((m) => [String(m.email || "").toLowerCase(), m]),
-    );
+function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
+  // דה־דופליקציה: קודם חברים פעילים, אח"כ הזמנות רק אם אין חבר פעיל עם אותו אימייל
+  const byKey = new Map();
+  const keyOf = (x) => (x.email ? String(x.email).toLowerCase() : `id:${x.id || x._id || Math.random()}`);
 
-    const pending = (invites || [])
-      .map((inv) => ({
-        id: inv.id,
-        name: (inv.email || "").split("@")[0],
-        email: inv.email,
-        role: inv.role || "employee",
-        status: "pending",
-        type: "invite",
-      }))
-      .filter((p) => !teamMap.has(String(p.email || "").toLowerCase()));
+  // הזרקה של מאומתים (active members)
+  team.forEach(m => {
+    const key = keyOf(m);
+    byKey.set(key, {
+      ...m,
+      status: m.status || 'active',
+      type: m.type || 'member',
+      role: (m.role || 'employee').toLowerCase(),
+    });
+  });
 
-    return [...team, ...pending];
-  }
+  // הזרקה של הזמנות (pending) רק אם אין חבר פעיל עם אותו אימייל
+  invites.forEach(inv => {
+    const key = keyOf(inv);
+    if (!byKey.has(key)) {
+      byKey.set(key, {
+        ...inv,
+        status: 'pending',
+        type: 'invite',
+        role: (inv.role || 'employee').toLowerCase(),
+      });
+    }
+  });
+
+  const arr = Array.from(byKey.values());
+
+  // 1) היררכיית תפקידים (מנהל קודם)
+  // לפי הבקשה: manager קודם, אח"כ owner, אח"כ shift_manager, אח"כ employee
+  const roleOrder = {
+    manager: 0,
+    owner: 1,
+    shift_manager: 2,
+    employee: 3,
+  };
+
+  // 2) סטטוס: פעילים לפני ממתינים
+  const statusOrder = {
+    active: 0,
+    pending: 1,
+  };
+
+  // מיון: תפקיד → סטטוס → שם
+  arr.sort((a, b) => {
+    const ra = roleOrder[a.role] ?? 999;
+    const rb = roleOrder[b.role] ?? 999;
+    if (ra !== rb) return ra - rb;
+
+    const sa = statusOrder[a.status] ?? 999;
+    const sb = statusOrder[b.status] ?? 999;
+    if (sa !== sb) return sa - sb;
+
+    return (a.name || a.email || '').localeCompare(b.name || b.email || '', 'he');
+  });
+
+  return arr;
+}
+
 
   async function loadInvites() {
     try {
@@ -2039,7 +2118,7 @@ function openEditModal() {
     closeAllModals();
 
     editingDispersionId = item?.id || item?._id || null;
-    const title = document.getElementById("dispersionModalTitle");
+       const title = document.getElementById("dispersionModalTitle");
     if (title) {
       title.textContent = editingDispersionId ? "ערוך פיזור" : "הוסף פיזור";
     }
@@ -2077,7 +2156,7 @@ function openEditModal() {
     const priceStr = (
       document.getElementById("disp_price")?.value || ""
     ).trim();
-    const price = Number(priceStr);
+    const price = Number(price);
 
     if (!date) return showToast?.("חובה לבחור תאריך", "warning");
     if (!payer) return showToast?.("יש להזין מי שילם", "warning");

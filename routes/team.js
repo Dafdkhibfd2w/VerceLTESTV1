@@ -221,4 +221,61 @@ router.put('/admin/tenants/:id/features', requireTeamAccess, async (req, res) =>
   res.json({ ok:true, features: featuresToPlain(tenant.features) });
 });
 
+// הוסף נקודת קצה חדשה לקבלת כל המשתמשים של העסק
+router.get('/team/members', authenticateUser, async (req, res) => {
+  try {
+    const tenantId = req.user.TenantID;
+    
+    // Get all users that belong to this tenant through memberships
+    const activeUsers = await User.find({
+      'memberships.tenant': tenantId
+    }).lean();
+
+    // Get all pending invites for this tenant
+    const pendingInvites = await Invite.find({
+      tenant: tenantId,
+      expiresAt: { $gt: new Date() }
+    }).lean();
+
+    // Combine and format the data
+    const combinedTeam = [
+      // Format active users
+      ...activeUsers.map(user => {
+        const membership = user.memberships.find(m => 
+          String(m.tenant) === String(tenantId)
+        );
+        return {
+          id: user._id,
+          name: user.name || '',
+          email: user.email,
+          role: membership?.role || 'employee',
+          status: 'active',
+          type: 'member'
+        };
+      }),
+      // Format pending invites
+      ...pendingInvites.map(invite => ({
+        id: invite._id,
+        email: invite.email,
+        name: invite.email.split('@')[0],
+        role: invite.role || 'employee',
+        status: 'pending',
+        type: 'invite'
+      }))
+    ];
+
+    return res.json({ 
+      ok: true, 
+      team: combinedTeam 
+    });
+
+  } catch (error) {
+    console.error('Error in /team/members:', error);
+    res.status(500).json({ 
+      ok: false, 
+      message: 'Server error' 
+    });
+  }
+});
+
 module.exports = router;

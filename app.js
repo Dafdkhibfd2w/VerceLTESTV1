@@ -237,9 +237,9 @@ app.get("/healthz", (req, res) =>
 // -------------------------------------------------
 // 404 for non-view routes (keep custom 404 page)
 // -------------------------------------------------
-app.get(/^\/(?!login\/?$|manager\/?$|worker\/?$).+/, (req, res) => {
-  res.status(404).sendFile(path.join(__dirname, "views", "404.html"));
-});
+// app.get(/^\/(?!login\/?$|manager\/?$|worker\/?$).+/, (req, res) => {
+//   res.status(404).sendFile(path.join(__dirname, "views", "404.html"));
+// });
 
 // -------------
 // Error handlers

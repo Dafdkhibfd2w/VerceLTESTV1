@@ -14,25 +14,94 @@ function plainFeatures(f) {
 
 router.get('/tenant/info', authenticateUser, async (req, res) => {
   try {
-    const user   = req.user;
+    const user = req.user;
     const tenant = await Tenant.findById(user.TenantID).lean();
     if (!tenant) return res.status(404).json({ ok:false, message:'עסק לא נמצא' });
 
+    // Get feature state
     const FEATURE_CATALOG = require("../config/featureCatalog");
-    const featureState = Object.fromEntries(Object.keys(FEATURE_CATALOG || {}).map(k => [k, !!(tenant.features && tenant.features.get && tenant.features.get(k))]));
+    const featureState = Object.fromEntries(
+      Object.keys(FEATURE_CATALOG || {}).map(k => 
+        [k, !!(tenant.features && tenant.features.get && tenant.features.get(k))]
+      )
+    );
 
-    const teamMembers = await User.find({ TenantID: tenant._id }).select('name email role memberships').lean();
-    const owner = teamMembers.find(m => m.memberships?.some(mem => String(mem.tenant) === String(tenant._id) && mem.role === 'owner')) || null;
+    // Get ALL team members with their roles
+    const teamMembers = await User.find({
+      'memberships.tenant': tenant._id
+    }).select('name email memberships').lean();
+
+    // Get pending invites
+    const Invite = require("../models/Invite");
+    const pendingInvites = await Invite.find({
+      tenant: tenant._id,
+      expiresAt: { $gt: new Date() }
+    }).lean();
+
+    // Find owner
+    const owner = teamMembers.find(m => 
+      m.memberships?.some(mem => 
+        String(mem.tenant) === String(tenant._id) && 
+        mem.role === 'owner'
+      )
+    ) || null;
+
+    // Combine active members and pending invites
+    const combinedTeam = [
+      // Active members
+      ...teamMembers.map(m => ({
+        id: m._id,
+        name: m.name,
+        email: m.email,
+        role: m.memberships?.find(mm => 
+          String(mm.tenant) === String(tenant._id)
+        )?.role || 'employee',
+        status: 'active',
+        type: 'member'
+      })),
+      // Pending invites
+      ...pendingInvites.map(inv => ({
+        id: inv._id,
+        name: inv.email.split('@')[0],
+        email: inv.email,
+        role: inv.role || 'employee',
+        status: 'pending',
+        type: 'invite'
+      }))
+    ];
 
     res.json({
       ok: true,
-      tenant: { id: tenant._id, name: tenant.name, createdAt: tenant.createdAt, settings: tenant.settings, features: plainFeatures(tenant.features) },
+      tenant: { 
+        id: tenant._id, 
+        name: tenant.name, 
+        createdAt: tenant.createdAt, 
+        settings: tenant.settings, 
+        features: plainFeatures(tenant.features) 
+      },
       featureState,
-      currentUser: { id: user._id, name: user.name, email: user.email, role: user.memberships?.find(m => String(m.tenant) === String(tenant._id))?.role || 'staff' },
-      owner: owner ? { name: owner.name, email: owner.email } : null,
-      teamMembers: teamMembers.map(m => ({ id: m._id, name: m.name, email: m.email, role: m.memberships?.find(mm => String(mm.tenant) === String(tenant._id))?.role || 'staff' }))
+      currentUser: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.memberships?.find(m => 
+          String(m.tenant) === String(tenant._id)
+        )?.role || 'employee' 
+      },
+      owner: owner ? { 
+        name: owner.name, 
+        email: owner.email 
+      } : null,
+      team: combinedTeam // שליחת כל הצוות - פעילים + ממתינים
     });
-  } catch (e) { console.error('tenant/info error:', e); res.status(500).json({ ok:false, message:'שגיאה בטעינת נתוני העסק' }); }
+
+  } catch (e) { 
+    console.error('tenant/info error:', e); 
+    res.status(500).json({ 
+      ok: false, 
+      message: 'שגיאה בטעינת נתוני העסק' 
+    }); 
+  }
 });
 
 router.get("/admin/tenants", requireTeamAccess, async (req, res) => {
