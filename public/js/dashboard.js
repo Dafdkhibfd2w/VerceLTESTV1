@@ -4,6 +4,101 @@
 
   let tenantData = null;
   let currentSection = "home";
+// ==== DEBUG NETWORK/FETCH ====
+// הדלקה/כיבוי: localStorage.setItem('debugNet', '1') / localStorage.removeItem('debugNet')
+(function setupDebugFetch() {
+  const ON = localStorage.getItem('debugNet') === '1';
+  if (!ON || window.__DEBUG_FETCH__) return;
+  window.__DEBUG_FETCH__ = true;
+
+  const origFetch = window.fetch;
+
+  // עוזר: מוצא PerformanceResourceTiming עדכני ל-URL
+  function findPerfEntry(url) {
+    try {
+      const entries = performance.getEntriesByName(url).filter(e => e.entryType === 'resource');
+      return entries[entries.length - 1] || null;
+    } catch { return null; }
+  }
+
+  // עוזר: חישוב גודל תגובה משוער ללא צריכת ה־body
+  async function estimateSize(res) {
+    // 1) Header content-length אם יש
+    const h = res.headers?.get('content-length');
+    if (h && !isNaN(+h)) return +h;
+    // 2) encodedBodySize מה-PerformanceEntry אם קיים (ייקבע למטה)
+    return null;
+  }
+
+  // עוזר: פורמט נעים למספרים/זמן
+  const fmtMs = ms => `${ms.toFixed(1)}ms`;
+  const fmtBytes = b => {
+    if (!Number.isFinite(b)) return '—';
+    const u = ['B','KB','MB','GB']; let i=0, v=b;
+    while (v >= 1024 && i<u.length-1) { v/=1024; i++; }
+    return (v>=100? Math.round(v): v.toFixed(1)) + ' ' + u[i];
+  };
+
+  window.fetch = async function debuggedFetch(input, init={}) {
+    const url = typeof input === 'string' ? input : (input?.url || '');
+    const method = (init.method || 'GET').toUpperCase();
+    const startedAt = performance.now();
+    const groupTitle = `[NET] ${method} ${url}`;
+    console.groupCollapsed(groupTitle);
+    console.time(`[NET] ${method} ${url}`);
+
+    let res, err, size = null, perf = null;
+    try {
+      res = await origFetch(input, init);
+      // נמדוד גודל אם ניתן
+      size = await estimateSize(res);
+      // ננסה למשוך PerformanceResourceTiming
+      // (נדרש same-origin או הרשה, ולעתים יופיע רק אחרי שהבקשה נסגרה)
+      perf = findPerfEntry(typeof input === 'string' ? input : res?.url || url);
+      // אם אין size מה-header ונמצא perf, נשתמש ב-encodedBodySize
+      if ((size == null) && perf && Number.isFinite(perf.encodedBodySize))
+        size = perf.encodedBodySize;
+
+      const dur = performance.now() - startedAt;
+
+      // לוג ראשי
+      console.log('Status:', res.status, res.statusText, '| Duration:', fmtMs(dur), '| Size:', fmtBytes(size ?? NaN));
+      console.log('Method:', method, '| URL:', res.url || url);
+
+      // Breakdown אם קיים PerformanceResourceTiming
+      if (perf) {
+        const breakdown = {
+          startTime: fmtMs(perf.startTime),
+          redirect: fmtMs(perf.redirectEnd - perf.redirectStart),
+          dns: fmtMs(perf.domainLookupEnd - perf.domainLookupStart),
+          connect: fmtMs(perf.connectEnd - perf.connectStart),
+          tls: fmtMs((perf.secureConnectionStart>0? perf.connectEnd - perf.secureConnectionStart : 0)),
+          request: fmtMs(perf.responseStart - perf.requestStart),
+          response: fmtMs(perf.responseEnd - perf.responseStart),
+          total: fmtMs(perf.duration),
+          transferSize: fmtBytes(perf.transferSize || 0),
+          encodedBodySize: fmtBytes(perf.encodedBodySize || 0),
+          decodedBodySize: fmtBytes(perf.decodedBodySize || 0),
+          cache: perf.transferSize === 0 ? 'possibly from cache' : 'network'
+        };
+        console.table(breakdown);
+      }
+
+      // התרעה על איטיות (סף ברירת מחדל 500ms)
+      if (dur > 500) console.warn('⚠️ Slow request:', fmtMs(dur), url);
+
+      return res;
+    } catch (e) {
+      err = e;
+      const dur = performance.now() - startedAt;
+      console.error('Fetch error after', fmtMs(dur), '→', e?.message || e);
+      throw e;
+    } finally {
+      console.timeEnd(`[NET] ${method} ${url}`);
+      console.groupEnd(groupTitle);
+    }
+  };
+})();
 
   // ---------- MOBILE DETECTION ----------
   const isMobile = () => window.innerWidth < 768;
@@ -291,36 +386,150 @@
     );
   }
 
-  function renderLogs(items) {
-    const wrap = document.getElementById("logsList");
-    if (!wrap) return;
-    if (!items.length) {
-      wrap.innerHTML = `<div class="empty">אין פעילות אחרונה</div>`;
-      return;
-    }
-    wrap.innerHTML = items
-      .map(
-        (l) => `
-      <div class="log">
-        <i class="fas fa-circle-dot dot"></i>
-        <div class="what">${renderAction(l)}</div>
-        <div class="when" title="${new Date(l.createdAt).toLocaleString("he-IL")}">${timeAgo(l.createdAt)}</div>
-      </div>
-    `,
-      )
-      .join("");
+
+const logsState = {
+  pageSize: 5,      // קבע כמה כל טעינה מביאה
+  items: [],
+  nextCursor: null,  // Date string (ISO) של הישן האחרון שהוצג
+  loading: false,
+  done: false
+};
+
+function renderLogsAppend(newItems) {
+  const wrap = document.getElementById("logsList");
+  if (!wrap) return;
+
+  // אם זה הראשון ואין פריטים בכלל
+  if (!logsState.items.length && !newItems.length) {
+    wrap.innerHTML = `<div class="empty">אין פעילות אחרונה</div>`;
+    return;
   }
 
-  async function loadLogs() {
-    try {
-      const r = await fetch("/api/logs?limit=30", { credentials: "include" });
-      const data = await r.json();
-      if (!data?.ok) throw 0;
-      renderLogs(data.logs || []);
-    } catch (e) {
-      renderLogs([]);
-    }
+  // אם זו הטעינה הראשונה – ננקה
+  if (!logsState.items.length) {
+    wrap.innerHTML = "";
   }
+
+  const html = newItems.map(l => `
+    <div class="log">
+      <i class="fas fa-circle-dot dot"></i>
+      <div class="what">${renderAction(l)}</div>
+      <div class="when" title="${new Date(l.createdAt).toLocaleString("he-IL")}">
+        ${timeAgo(l.createdAt)}
+      </div>
+    </div>
+  `).join("");
+
+  wrap.insertAdjacentHTML("beforeend", html);
+}
+
+function ensureLogsMoreButton() {
+  const wrap = document.getElementById("logsList");
+  if (!wrap) return;
+
+  // צור אזור כפתור אם אין
+let footer = document.getElementById("logsMoreWrap");
+if (!footer) {
+  footer = document.createElement("div");
+  footer.id = "logsMoreWrap";
+  footer.style.marginTop = "8px";
+  footer.innerHTML = `
+    <button id="logsLoadMore" class="btn-load-more" type="button">
+      <span class="btn-icon" aria-hidden="true">⟲</span>
+      <span class="btn-text">הצג עוד</span>
+      <span class="spinner" aria-hidden="true"></span>
+    </button>
+  `;
+
+  // הוספה אחרי הרשימה (בד"כ בתוך card-body)
+  const cardBody = wrap.parentElement;
+  cardBody.appendChild(footer);
+}
+
+
+  const btn = document.getElementById("logsLoadMore");
+  btn.onclick = handleLoadMore;
+
+  // הצג/החבא לפי מצב
+  if (logsState.done) {
+    btn.style.display = "none";
+  } else {
+    btn.style.display = logsState.loading ? "none" : "inline-flex";
+  }
+}
+
+async function fetchLogsPage({ before } = {}) {
+  const params = new URLSearchParams({ limit: String(logsState.pageSize) });
+  if (before) params.set("before", before);
+
+  const r = await fetch(`/api/logs?${params.toString()}`, { credentials: "include" });
+  const data = await r.json();
+  if (!data?.ok) throw new Error(data?.message || "שגיאה בטעינת הלוגים");
+
+  return {
+    items: data.logs || [],
+    nextCursor: data.nextCursor || null,
+    hasMore: !!data.hasMore
+  };
+}
+
+async function initLogsFirstPage() {
+  const wrap = document.getElementById("logsList");
+  if (!wrap) return;
+  wrap.innerHTML = `<div class="loading">טוען...</div>`;
+
+  logsState.items = [];
+  logsState.nextCursor = null;
+  logsState.done = false;
+
+  try {
+    logsState.loading = true;
+    const { items, nextCursor, hasMore } = await fetchLogsPage();
+    logsState.items = items;
+    logsState.nextCursor = nextCursor;
+    logsState.done = !hasMore || !nextCursor;
+
+    wrap.innerHTML = ""; // נקה את "טוען..."
+    renderLogsAppend(items);
+  } catch (e) {
+    console.error(e);
+    wrap.innerHTML = `<div class="empty">לא ניתן לטעון יומן כרגע</div>`;
+    logsState.done = true;
+  } finally {
+    logsState.loading = false;
+    ensureLogsMoreButton();
+  }
+}
+
+async function handleLoadMore() {
+  if (logsState.loading || logsState.done) return;
+  try {
+    logsState.loading = true;
+    ensureLogsMoreButton(); // יסתיר זמנית את הכפתור
+
+    const { items, nextCursor, hasMore } = await fetchLogsPage({
+      before: logsState.nextCursor
+    });
+
+    logsState.items.push(...items);
+    logsState.nextCursor = nextCursor;
+    logsState.done = !hasMore || !nextCursor;
+
+    renderLogsAppend(items);
+  } catch (e) {
+    console.error(e);
+    window.showToast?.("שגיאה בטעינת עוד לוגים", "error");
+    logsState.done = true; // לא לחסום לנצח, אפשר להשאיר false אם תרצה לנסות שוב
+  } finally {
+    logsState.loading = false;
+    ensureLogsMoreButton();
+  }
+}
+
+// החלף את loadLogs הקיים בקריאה הבאה אחרי שהדף נטען/אחרי טעינת tenant:
+document.addEventListener("DOMContentLoaded", () => {
+  initLogsFirstPage();
+});
 
   function toggleQuickUploadMenu() {
     let menu = document.getElementById("quickUploadMenu");
@@ -793,8 +1002,8 @@ function normalizeTenant(payload) {
     const teamArr = Array.isArray(tenantData.team) ? tenantData.team : [];
     const invitesArr = Array.isArray(tenantData.invites) ? tenantData.invites : [];
     
-    console.log('Team members:', teamArr);
-    console.log('Pending invites:', invitesArr);
+    // console.log('Team members:', teamArr);
+    // console.log('Pending invites:', invitesArr);
     
     // שלב את העובדים וההזמנות
     const combined = getCombinedTeam(teamArr, invitesArr);
@@ -830,7 +1039,7 @@ function normalizeTenant(payload) {
       sAddr.value = tenantData.address || "";
     if (sPhone && document.activeElement !== sPhone)
       sPhone.value = tenantData.phone || "";
-    console.log(tenantData);
+    // console.log(tenantData);
   }
 
   // ---------- TEAM LIST ----------
@@ -1455,9 +1664,7 @@ function openEditModal() {
     `;
     document.body.appendChild(modal);
 
-    document.getElementById("inv_close_btn").onclick = closeUploadInvoiceModal;
-    document.getElementById("inv_cancel").onclick = closeUploadInvoiceModal;
-    document.getElementById("inv_submit").onclick = onSubmitUpload;
+
     modal.addEventListener(
       "click",
       (e) => e.target === modal && closeUploadInvoiceModal(),
@@ -1467,7 +1674,9 @@ function openEditModal() {
       if (f) showToast?.(`נבחר: ${f.name}`, "info", 900);
     });
   }
-
+    document.getElementById("inv_close_btn").onclick = closeUploadInvoiceModal;
+    document.getElementById("inv_cancel").onclick = closeUploadInvoiceModal;
+    document.getElementById("inv_submit").onclick = onSubmitUpload;
   function openUploadInvoiceModal() {
     // Close all other modals first
     closeAllModals();
@@ -1862,7 +2071,7 @@ function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
       await loadInvites();
       await Promise.allSettled([
         loadInvoices?.(""),
-        loadLogs?.(),
+        initLogsFirstPage?.(),
         tenantData?.features?.dispersions
           ? loadDispersions?.("")
           : Promise.resolve(),
@@ -2392,9 +2601,9 @@ function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
       }
 
       renderTenant();
-      await loadLogs().catch(() => {});
+      await initLogsFirstPage().catch(() => {});
       await loadInvites().catch(() => renderInvites([]));
-      setInterval(() => loadLogs().catch(() => {}), 60_000);
+      setInterval(() => initLogsFirstPage().catch(() => {}), 60_000);
 
       applyFeatureGates();
       renderBottomNav();
@@ -2444,9 +2653,9 @@ function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
         }
 
         renderTenant();
-        await loadLogs().catch(() => {});
+        await initLogsFirstPage().catch(() => {});
         await loadInvites().catch(() => renderInvites([]));
-        setInterval(() => loadLogs().catch(() => {}), 60_000);
+        setInterval(() => initLogsFirstPage().catch(() => {}), 60_000);
 
         applyFeatureGates();
         renderBottomNav();
@@ -2542,4 +2751,29 @@ function getCombinedTeam(team = [], invites = [], tenantId = tenantData?.id) {
   initTheme();
 
 });
+
+  const row = document.querySelector('#inv_file')?.closest('.form-row');
+  const input = document.getElementById('inv_file');
+  const hint = row?.querySelector('.hint');
+
+  if (!row || !input) return;
+
+  // עדכון שם קובץ שנבחר
+  input.addEventListener('change', () => {
+    const f = input.files?.[0];
+    if (f && hint) hint.textContent = `נבחר: ${f.name} · ${(f.size/1024/1024).toFixed(2)}MB`;
+  });
+
+  // Drag & Drop על כל השורה
+  ['dragenter','dragover'].forEach(ev =>
+    row.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); row.classList.add('dragover'); })
+  );
+  ['dragleave','drop'].forEach(ev =>
+    row.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); row.classList.remove('dragover'); })
+  );
+  row.addEventListener('drop', e => {
+    if (!e.dataTransfer?.files?.length) return;
+    input.files = e.dataTransfer.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
 })();

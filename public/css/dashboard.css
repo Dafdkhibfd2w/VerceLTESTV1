@@ -240,6 +240,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   direction: ltr;           /* שומר את ה-scrollbar מימין */
+  padding:6px;
 }
 .logs-card .logs-list::-webkit-scrollbar { width: 6px; }
 .logs-card .logs-list::-webkit-scrollbar-track { background: transparent; }
@@ -555,6 +556,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
+  margin-top: 6px;
 }
 
 .theme-toggle:hover, #refreshAllBtn:hover {
@@ -1875,6 +1877,7 @@ input:focus, select:focus {
   
   /* וידוא שה-main content לא מכסה את הניווט */
   .main-content {
+    padding-bottom: 80px !important;
   }
   
   .content {
@@ -2180,7 +2183,7 @@ input:focus, select:focus {
   .team-card .team-list,
   .logs-card .logs-list,
   .products-order-list {
-    max-height: 60vh !important; /* גובה דינמי לפי מסך */
+    max-height: 35vh !important; /* גובה דינמי לפי מסך */
     overflow-y: scroll !important; /* תמיד scroll במקום auto */
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
@@ -2290,3 +2293,30 @@ input:focus, select:focus {
     touch-action: inherit !important;
   }
 }
+
+/* Log enter animation */
+.log-enter {
+  opacity: 0;
+  transform: translateY(8px) scale(.995);
+}
+.log-enter.log-enter-active {
+  animation: logsSlideIn 480ms cubic-bezier(.2,.9,.2,1) forwards;
+}
+
+@keyframes logsSlideIn {
+  from { opacity: 0; transform: translateY(10px) scale(.995); }
+  60% { opacity: 1; transform: translateY(-6px) scale(1.004); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Show more button style in logs card */
+#logsShowMore {
+  display: none;
+  margin-top: 12px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-weight: 700;
+}
+
+/* small spinner class already used */
+.spin { animation: spin 1s linear infinite; }

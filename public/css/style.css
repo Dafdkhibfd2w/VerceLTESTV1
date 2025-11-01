@@ -1053,12 +1053,60 @@ body {
 .main-content {
   flex: 1 0 auto;
 }
-
+#logsShowMore { margin-top: 10px; align-self: center; }
+#logsList .log {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#logsList .log .when { opacity:.8; font-size:.9rem; white-space:nowrap; }
 /* iOS viewport height fix */
 :root {
   --vh: 1vh;
 }
+#logsShowMore {
+  margin-top: 10px;
+  align-self: center;
+}
+#logsList .log {
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+#logsList .log .when {
+  opacity: .8;
+  font-size: .9rem;
+  white-space: nowrap;
+}
+/* ===== כפתור הצג עוד פשוט ===== */
+#logsMoreWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
 
+#logsLoadMore {
+  background-color: none;
+  color: #333;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+
+
+#logsLoadMore:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 
 body {
   overflow-y: auto;

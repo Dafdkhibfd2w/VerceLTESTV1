@@ -190,19 +190,54 @@ router.delete('/users/:id', authenticateUser, async (req, res) => {
   } catch (e) { console.error('DELETE /users/:id', e); res.status(500).json({ ok:false, message:'Server error' }); }
 });
 
+// GET /logs?limit=30&before=2025-10-28T23:59:59.999Z
 router.get('/logs', authenticateUser, async (req, res) => {
   try {
     const myRole = getRoleForTenant(req.user, req.user.TenantID) || 'employee';
-    if (!['owner','manager','shift_manager'].includes(myRole)) return res.status(403).json({ ok:false, message:'אין הרשאה לצפייה ביומן' });
+    if (!['owner','manager','shift_manager'].includes(myRole)) {
+      return res.status(403).json({ ok:false, message:'אין הרשאה לצפייה ביומן' });
+    }
+
     const ActivityLog = require("../models/ActivityLog");
     const limit = Math.min(parseInt(req.query.limit || 30, 10), 100);
-    const since = req.query.since ? new Date(req.query.since) : null;
+
+    const since  = req.query.since  ? new Date(req.query.since)  : null; // לחדש/ריענון
+    const before = req.query.before ? new Date(req.query.before) : null; // ל"טעינה למטה" (ישנים יותר)
+
     const q = { tenant: req.user.TenantID };
-    if (since) q.createdAt = { $gte: since };
-    const logs = await ActivityLog.find(q).sort({ createdAt: -1 }).limit(limit).lean();
-    res.json({ ok:true, logs: logs.map(l => ({ id:l._id, action:l.action, createdAt:l.createdAt, actor:{ id:l.actor, name:l.actorName, email:l.actorEmail }, target:l.target, meta:l.meta }))});
-  } catch (e) { console.error('GET /logs error:', e); res.status(500).json({ ok:false, message:'שגיאה בטעינת הלוגים' }); }
+    if (since || before) {
+      q.createdAt = {};
+      if (since)  q.createdAt.$gte = since;
+      if (before) q.createdAt.$lt  = before;  // שים לב: ישנים יותר
+    }
+
+    // לגלות אם יש עוד: מושכים limit+1
+    const docs = await ActivityLog.find(q)
+      .sort({ createdAt: -1 })
+      .limit(limit + 1)
+      .lean();
+
+    const hasMore = docs.length > limit;
+    const page    = hasMore ? docs.slice(0, limit) : docs;
+
+    const mapped = page.map(l => ({
+      id: l._id,
+      action: l.action,
+      createdAt: l.createdAt,
+      actor: { id: l.actor, name: l.actorName, email: l.actorEmail },
+      target: l.target,
+      meta: l.meta
+    }));
+
+    const nextCursor = page.length ? page[page.length - 1].createdAt : null;
+
+    res.json({ ok:true, logs:mapped, hasMore, nextCursor });
+  } catch (e) {
+    console.error('GET /logs error:', e);
+    res.status(500).json({ ok:false, message:'שגיאה בטעינת הלוגים' });
+  }
 });
+
 
 router.put('/admin/tenants/:id/features', requireTeamAccess, async (req, res) => {
   const { id } = req.params;
